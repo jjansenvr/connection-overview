@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
+  Handle,
   MiniMap,
-  Panel
+  Panel,
+  Position
 } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -19,6 +21,7 @@ HRM,Publiceert medewerker-events,ERP,Valideert medewerkers,SaaS,On premises,Even
 function NodeLabel({ data }) {
   return (
     <div className="node-label">
+      <Handle type="target" position={Position.Left} />
       <div className="node-title">{data.label}</div>
       <div className="node-badges">
         {(data.types || []).map((type) => (
@@ -30,6 +33,7 @@ function NodeLabel({ data }) {
       {(data.opmerkingen || []).length ? (
         <div className="node-remarks">{data.opmerkingen.join(" • ")}</div>
       ) : null}
+      <Handle type="source" position={Position.Right} />
     </div>
   );
 }
