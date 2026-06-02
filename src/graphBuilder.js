@@ -123,6 +123,19 @@ export function buildGraph(records) {
   const nodeMap = new Map();
   const edges = [];
 
+  function ensureNode(name) {
+    if (!nodeMap.has(name)) {
+      nodeMap.set(name, {
+        id: name,
+        label: name,
+        types: new Set(),
+        opmerkingen: new Set()
+      });
+    }
+
+    return nodeMap.get(name);
+  }
+
   records.forEach((record, index) => {
     const sourceName = String(record.bronapplicatie || "").trim();
     const targetName = String(record.doelapplicatie || "").trim();
@@ -131,47 +144,22 @@ export function buildGraph(records) {
       return;
     }
 
+    const sourceNode = ensureNode(sourceName);
+    const targetNode = ensureNode(targetName);
+
     const sourceHosting = normalizeHosting(record.bronHosting);
     const targetHosting = normalizeHosting(record.doelHosting);
 
-    if (!nodeMap.has(sourceName)) {
-      nodeMap.set(sourceName, {
-        id: sourceName,
-        type: "appNode",
-        data: {
-          label: sourceName,
-          hosting: sourceHosting,
-          color: nodeColorByHosting(sourceHosting)
-        },
-        position: { x: 0, y: 0 },
-        style: {
-          borderRadius: 10,
-          border: `2px solid ${nodeColorByHosting(sourceHosting)}`,
-          padding: 10,
-          background: "#f8fafc",
-          minWidth: 180
-        }
-      });
-    }
+    sourceNode.types.add(sourceHosting || HOSTING_FALLBACK);
+    targetNode.types.add(targetHosting || HOSTING_FALLBACK);
 
-    if (!nodeMap.has(targetName)) {
-      nodeMap.set(targetName, {
-        id: targetName,
-        type: "appNode",
-        data: {
-          label: targetName,
-          hosting: targetHosting,
-          color: nodeColorByHosting(targetHosting)
-        },
-        position: { x: 0, y: 0 },
-        style: {
-          borderRadius: 10,
-          border: `2px solid ${nodeColorByHosting(targetHosting)}`,
-          padding: 10,
-          background: "#f8fafc",
-          minWidth: 180
-        }
-      });
+    const sourceOpmerking = String(record.bronOpmerking || "").trim();
+    const targetOpmerking = String(record.doelOpmerking || "").trim();
+    if (sourceOpmerking) {
+      sourceNode.opmerkingen.add(sourceOpmerking);
+    }
+    if (targetOpmerking) {
+      targetNode.opmerkingen.add(targetOpmerking);
     }
 
     edges.push({
@@ -198,8 +186,33 @@ export function buildGraph(records) {
     });
   });
 
+  const nodes = Array.from(nodeMap.values()).map((node) => {
+    const types = Array.from(node.types);
+    const opmerkingen = Array.from(node.opmerkingen);
+    const primaryType = types[0] || HOSTING_FALLBACK;
+
+    return {
+      id: node.id,
+      type: "appNode",
+      data: {
+        label: node.label,
+        types,
+        opmerkingen,
+        color: nodeColorByHosting(primaryType)
+      },
+      position: { x: 0, y: 0 },
+      style: {
+        borderRadius: 10,
+        border: `2px solid ${nodeColorByHosting(primaryType)}`,
+        padding: 10,
+        background: "#f8fafc",
+        minWidth: 210
+      }
+    };
+  });
+
   return {
-    nodes: layoutNodes(Array.from(nodeMap.values()), edges),
+    nodes: layoutNodes(nodes, edges),
     edges
   };
 }

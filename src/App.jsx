@@ -11,18 +11,25 @@ import { buildGraph } from "./graphBuilder";
 import { parseByFormat } from "./parsers";
 import sampleYaml from "./sample-data.yaml?raw";
 
-const sampleCsv = `Bronapplicatie,Doelapplicatie,Brontype,Doeltype,Koppelingsoort
-ERP,CRM,On premises,SaaS,API
-CRM,Datawarehouse,SaaS,On premises,Batch
-HRM,ERP,SaaS,On premises,Event`;
+const sampleCsv = `Bronapplicatie,Bronopmerking,Doelapplicatie,Doelopmerking,Brontype,Doeltype,Koppelingsoort
+ERP,Stuurt orderdata door,CRM,Ontvangt orderdata,On premises,SaaS,API
+CRM,Levert klantupdates,Datawarehouse,Verwerkt periodieke export,SaaS,On premises,Batch
+HRM,Publiceert medewerker-events,ERP,Valideert medewerkers,SaaS,On premises,Event`;
 
 function NodeLabel({ data }) {
   return (
     <div className="node-label">
       <div className="node-title">{data.label}</div>
-      <div className="node-badge" style={{ backgroundColor: data.color }}>
-        {data.hosting}
+      <div className="node-badges">
+        {(data.types || []).map((type) => (
+          <div key={type} className="node-badge" style={{ backgroundColor: data.color }}>
+            {type}
+          </div>
+        ))}
       </div>
+      {(data.opmerkingen || []).length ? (
+        <div className="node-remarks">{data.opmerkingen.join(" • ")}</div>
+      ) : null}
     </div>
   );
 }

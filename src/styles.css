@@ -164,12 +164,24 @@ textarea {
   font-size: 0.95rem;
 }
 
+.node-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .node-badge {
   width: max-content;
   color: white;
   font-size: 0.78rem;
   border-radius: 999px;
   padding: 3px 10px;
+}
+
+.node-remarks {
+  font-size: 0.78rem;
+  color: #334155;
+  line-height: 1.35;
 }
 
 .legend {
