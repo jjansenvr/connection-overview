@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
   Handle,
   MiniMap,
   Panel,
-  Position
+  Position,
+  useEdgesState,
+  useNodesState
 } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -40,10 +42,46 @@ function NodeLabel({ data }) {
 
 const nodeTypes = { appNode: NodeLabel };
 
+function getConnectedNodeIds(startId, edges) {
+  const adjacency = new Map();
+
+  edges.forEach((edge) => {
+    if (!adjacency.has(edge.source)) {
+      adjacency.set(edge.source, new Set());
+    }
+    if (!adjacency.has(edge.target)) {
+      adjacency.set(edge.target, new Set());
+    }
+
+    adjacency.get(edge.source).add(edge.target);
+    adjacency.get(edge.target).add(edge.source);
+  });
+
+  const visited = new Set([startId]);
+  const queue = [startId];
+
+  while (queue.length) {
+    const current = queue.shift();
+    const neighbors = adjacency.get(current) || new Set();
+
+    neighbors.forEach((neighbor) => {
+      if (!visited.has(neighbor)) {
+        visited.add(neighbor);
+        queue.push(neighbor);
+      }
+    });
+  }
+
+  return visited;
+}
+
 export default function App() {
   const [format, setFormat] = useState("yaml");
   const [input, setInput] = useState(sampleYaml);
   const [error, setError] = useState("");
+  const [dragEnabled, setDragEnabled] = useState(true);
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
   const parsed = useMemo(() => {
     try {
@@ -57,6 +95,93 @@ export default function App() {
   }, [input, format]);
 
   const graph = useMemo(() => buildGraph(parsed), [parsed]);
+  const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(graph.edges);
+
+  useEffect(() => {
+    setNodes(graph.nodes);
+    setEdges(graph.edges);
+    setSelectedNodeId(null);
+  }, [graph, setEdges, setNodes]);
+
+  const selectedCluster = useMemo(() => {
+    if (!selectedNodeId) {
+      return null;
+    }
+
+    return getConnectedNodeIds(selectedNodeId, edges);
+  }, [selectedNodeId, edges]);
+
+  const displayNodes = useMemo(() => {
+    if (!selectedCluster) {
+      return nodes;
+    }
+
+    return nodes.map((node) => {
+      const isInFocus = selectedCluster.has(node.id);
+      const isSelected = node.id === selectedNodeId;
+
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          opacity: isInFocus ? 1 : 0.2,
+          boxShadow: isSelected ? "0 0 0 3px rgba(15, 118, 110, 0.28)" : "none"
+        }
+      };
+    });
+  }, [nodes, selectedCluster, selectedNodeId]);
+
+  const displayEdges = useMemo(() => {
+    if (!selectedCluster) {
+      return edges;
+    }
+
+    return edges.map((edge) => {
+      const isInFocus = selectedCluster.has(edge.source) && selectedCluster.has(edge.target);
+
+      return {
+        ...edge,
+        animated: isInFocus,
+        style: {
+          ...edge.style,
+          opacity: isInFocus ? 1 : 0.12,
+          strokeWidth: isInFocus ? 2.2 : 1
+        },
+        labelStyle: {
+          ...edge.labelStyle,
+          opacity: isInFocus ? 1 : 0.2
+        },
+        labelBgStyle: {
+          ...edge.labelBgStyle,
+          opacity: isInFocus ? 1 : 0.2
+        }
+      };
+    });
+  }, [edges, selectedCluster]);
+
+  const handleNodeClick = useCallback(
+    (_, node) => {
+      setSelectedNodeId(node.id);
+      const connected = getConnectedNodeIds(node.id, edges);
+
+      if (reactFlowInstance && connected.size) {
+        reactFlowInstance.fitView({
+          nodes: Array.from(connected).map((id) => ({ id })),
+          padding: 0.25,
+          duration: 350
+        });
+      }
+    },
+    [edges, reactFlowInstance]
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelectedNodeId(null);
+    if (reactFlowInstance) {
+      reactFlowInstance.fitView({ padding: 0.2, duration: 250 });
+    }
+  }, [reactFlowInstance]);
 
   const onFileUpload = async (event) => {
     const file = event.target.files?.[0];
@@ -110,6 +235,18 @@ export default function App() {
             </button>
           </div>
 
+          <div className="options-row">
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={dragEnabled}
+                onChange={(e) => setDragEnabled(e.target.checked)}
+              />
+              Nodes verslepen
+            </label>
+            <span className="hint">Klik op een node om verbonden onderdelen te focussen.</span>
+          </div>
+
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -123,9 +260,15 @@ export default function App() {
 
         <section className="panel flow-panel">
           <ReactFlow
-            nodes={graph.nodes}
-            edges={graph.edges}
+            nodes={displayNodes}
+            edges={displayEdges}
             nodeTypes={nodeTypes}
+            onInit={setReactFlowInstance}
+            onNodeClick={handleNodeClick}
+            onPaneClick={clearSelection}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            nodesDraggable={dragEnabled}
             fitView
             minZoom={0.2}
             maxZoom={1.8}

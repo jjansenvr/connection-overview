@@ -101,6 +101,25 @@ body {
   gap: 10px;
 }
 
+.options-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .format-row label {
   display: flex;
   flex-direction: column;
