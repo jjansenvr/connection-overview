@@ -13,12 +13,6 @@ import "reactflow/dist/style.css";
 
 import { applyElkLayout, buildGraph } from "./graphBuilder";
 import { parseByFormat } from "./parsers";
-import sampleYaml from "./sample-data.yaml?raw";
-
-const sampleCsv = `Bronapplicatie,Bronopmerking,Doelapplicatie,Doelopmerking,Brontype,Doeltype,Koppelingsoort
-ERP,Stuurt orderdata door,CRM,Ontvangt orderdata,On premises,SaaS,API
-CRM,Levert klantupdates,Datawarehouse,Verwerkt periodieke export,SaaS,On premises,Batch
-HRM,Publiceert medewerker-events,ERP,Valideert medewerkers,SaaS,On premises,Event`;
 
 const SAVED_FILES_STORAGE_KEY = "connection-overview.saved-files.v1";
 
@@ -121,12 +115,13 @@ function getConnectedNodeIds(startId, edges) {
 
 export default function App() {
   const [format, setFormat] = useState("yaml");
-  const [input, setInput] = useState(sampleYaml);
+  const [input, setInput] = useState("");
   const [error, setError] = useState("");
   const [savedFiles, setSavedFiles] = useState([]);
   const [activeSavedFileId, setActiveSavedFileId] = useState("");
   const [renameValue, setRenameValue] = useState("");
   const [isUploadCollapsed, setIsUploadCollapsed] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [dragEnabled, setDragEnabled] = useState(true);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -178,6 +173,8 @@ export default function App() {
     () => savedFiles.find((file) => file.id === activeSavedFileId) || null,
     [savedFiles, activeSavedFileId]
   );
+
+  const quickSwitchFiles = useMemo(() => savedFiles.slice(0, 10), [savedFiles]);
 
   useEffect(() => {
     setRenameValue(activeSavedFile?.name || "");
@@ -587,6 +584,15 @@ export default function App() {
                 <button
                   type="button"
                   className="collapse-btn"
+                  onClick={() => setIsHelpOpen((value) => !value)}
+                  aria-label={isHelpOpen ? "Sluit invoerhulp" : "Open invoerhulp"}
+                  title={isHelpOpen ? "Sluit invoerhulp" : "Open invoerhulp"}
+                >
+                  ?
+                </button>
+                <button
+                  type="button"
+                  className="collapse-btn"
                   onClick={() => setIsUploadCollapsed((value) => !value)}
                   aria-label={isUploadCollapsed ? "Open invoerpaneel" : "Sluit invoerpaneel"}
                   title={isUploadCollapsed ? "Open invoerpaneel" : "Sluit invoerpaneel"}
@@ -595,6 +601,26 @@ export default function App() {
                 </button>
               </div>
             </div>
+
+            {isHelpOpen ? (
+              <div className="input-help" role="note" aria-label="Invoerhulp">
+                <p className="help-title">Input bestand opties</p>
+                <p className="hint">Ondersteund: CSV, YAML (.yaml, .yml). Gebruik 1 record per regel/object.</p>
+                <p className="help-subtitle">Minimaal benodigd</p>
+                <ul>
+                  <li>Bronapplicatie (of Source, Source Application, From)</li>
+                  <li>Doelapplicatie (of Target, Target Application, To)</li>
+                </ul>
+                <p className="help-subtitle">Optionele velden</p>
+                <ul>
+                  <li>Bron type: Brontype, Bron type, Source hosting</li>
+                  <li>Doel type: Doeltype, Doel type, Target hosting</li>
+                  <li>Bron opmerking: Bronopmerking, Source comment, Source remark</li>
+                  <li>Doel opmerking: Doelopmerking, Target comment, Target remark</li>
+                  <li>Koppelingsoort: Koppelingsoort, Soort koppeling, Connection type, Integration type</li>
+                </ul>
+              </div>
+            ) : null}
 
             {!isUploadCollapsed ? (
               <>
@@ -606,13 +632,6 @@ export default function App() {
                       <option value="csv">CSV</option>
                     </select>
                   </label>
-
-                  <button
-                    type="button"
-                    onClick={() => setInput(format === "yaml" ? sampleYaml : sampleCsv)}
-                  >
-                    Laad voorbeeld
-                  </button>
                 </div>
 
                 <div className="saved-row">
@@ -630,6 +649,19 @@ export default function App() {
                       ))}
                     </select>
                   </label>
+                  <div className="quick-switch-row" role="group" aria-label="Snel wisselen van datasets">
+                    {quickSwitchFiles.map((file) => (
+                      <button
+                        key={file.id}
+                        type="button"
+                        className={`quick-file-btn ${activeSavedFileId === file.id ? "active" : ""}`}
+                        onClick={() => loadSavedFile(file.id)}
+                        title={`Laad ${file.name}`}
+                      >
+                        {file.name}
+                      </button>
+                    ))}
+                  </div>
                   <div className="saved-rename-row">
                     <input
                       type="text"
@@ -704,7 +736,24 @@ export default function App() {
                 <p className="meta">Records: {parsed.length}</p>
               </>
             ) : (
-              <p className="meta">Paneel ingeklapt. Gebruik "Bestand kiezen" om direct nieuwe data te laden.</p>
+              <>
+                <p className="meta">Paneel ingeklapt. Gebruik "Bestand kiezen" of klik hieronder om te wisselen.</p>
+                {quickSwitchFiles.length ? (
+                  <div className="quick-switch-row" role="group" aria-label="Snel wisselen van datasets">
+                    {quickSwitchFiles.map((file) => (
+                      <button
+                        key={file.id}
+                        type="button"
+                        className={`quick-file-btn ${activeSavedFileId === file.id ? "active" : ""}`}
+                        onClick={() => loadSavedFile(file.id)}
+                        title={`Laad ${file.name}`}
+                      >
+                        {file.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </>
             )}
           </section>
 
