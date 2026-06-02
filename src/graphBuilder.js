@@ -1,28 +1,77 @@
 import { MarkerType } from "reactflow";
-import dagre from "dagre";
 
 const HOSTING_FALLBACK = "Unknown";
 const CONNECTION_FALLBACK = "Onbekend";
-const NODE_WIDTH = 220;
-const NODE_HEIGHT = 84;
+const LAYER_X_GAP = 300;
+const LAYER_Y_GAP = 140;
 
 function layoutNodes(nodes, edges) {
-  const graph = new dagre.graphlib.Graph();
-  graph.setDefaultEdgeLabel(() => ({}));
-  graph.setGraph({ rankdir: "LR", ranksep: 100, nodesep: 40 });
-
-  nodes.forEach((node) => {
-    graph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
-  });
+  const ids = nodes.map((node) => node.id);
+  const inDegree = new Map(ids.map((id) => [id, 0]));
+  const neighbors = new Map(ids.map((id) => [id, []]));
+  const layerById = new Map(ids.map((id) => [id, 0]));
 
   edges.forEach((edge) => {
-    graph.setEdge(edge.source, edge.target);
+    if (!neighbors.has(edge.source) || !inDegree.has(edge.target)) {
+      return;
+    }
+
+    neighbors.get(edge.source).push(edge.target);
+    inDegree.set(edge.target, inDegree.get(edge.target) + 1);
   });
 
-  dagre.layout(graph);
+  const queue = ids
+    .filter((id) => inDegree.get(id) === 0)
+    .sort((a, b) => a.localeCompare(b));
+
+  while (queue.length) {
+    const current = queue.shift();
+    const currentLayer = layerById.get(current);
+
+    neighbors.get(current).forEach((next) => {
+      const nextLayer = Math.max(layerById.get(next), currentLayer + 1);
+      layerById.set(next, nextLayer);
+
+      const nextInDegree = inDegree.get(next) - 1;
+      inDegree.set(next, nextInDegree);
+
+      if (nextInDegree === 0) {
+        queue.push(next);
+      }
+    });
+  }
+
+  // If cycles exist, remaining nodes still get a deterministic layer.
+  ids.forEach((id) => {
+    if (inDegree.get(id) > 0 && layerById.get(id) === 0) {
+      layerById.set(id, 1);
+    }
+  });
+
+  const nodesByLayer = new Map();
+  ids.forEach((id) => {
+    const layer = layerById.get(id) || 0;
+    const bucket = nodesByLayer.get(layer) || [];
+    bucket.push(id);
+    nodesByLayer.set(layer, bucket);
+  });
+
+  const positionById = new Map();
+  Array.from(nodesByLayer.entries())
+    .sort((a, b) => a[0] - b[0])
+    .forEach(([layer, layerIds]) => {
+      layerIds.sort((a, b) => a.localeCompare(b));
+
+      layerIds.forEach((id, row) => {
+        positionById.set(id, {
+          x: layer * LAYER_X_GAP,
+          y: row * LAYER_Y_GAP
+        });
+      });
+    });
 
   return nodes.map((node) => {
-    const positioned = graph.node(node.id);
+    const positioned = positionById.get(node.id);
 
     if (!positioned) {
       return node;
@@ -33,8 +82,8 @@ function layoutNodes(nodes, edges) {
       sourcePosition: "right",
       targetPosition: "left",
       position: {
-        x: positioned.x - NODE_WIDTH / 2,
-        y: positioned.y - NODE_HEIGHT / 2
+        x: positioned.x,
+        y: positioned.y
       }
     };
   });
