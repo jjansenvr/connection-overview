@@ -235,13 +235,13 @@ export function buildGraph(records) {
         strokeWidth: 1.6
       },
       labelStyle: {
-        fill: "#0f172a",
+        fill: "var(--text-primary)",
         fontWeight: 600
       },
       labelBgPadding: [5, 2],
       labelBgBorderRadius: 4,
       labelBgStyle: {
-        fill: "#e2e8f0"
+        fill: "var(--bg-tertiary)"
       }
     });
   });
@@ -265,7 +265,7 @@ export function buildGraph(records) {
         borderRadius: 10,
         border: `2px solid ${nodeColorByHosting(primaryType)}`,
         padding: 10,
-        background: "#f8fafc",
+        background: "var(--bg-secondary)",
         minWidth: 210
       }
     };

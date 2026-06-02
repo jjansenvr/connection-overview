@@ -246,7 +246,14 @@ export default function App() {
             <h2>Data Input</h2>
             <label className="file-btn">
               Bestand kiezen
-              <input type="file" accept=".csv,.yaml,.yml,text/csv" onChange={onFileUpload} />
+              <input
+                type="file"
+                accept=".csv,.yaml,.yml,text/csv"
+                onClick={(e) => {
+                  e.currentTarget.value = "";
+                }}
+                onChange={onFileUpload}
+              />
             </label>
           </div>
 
