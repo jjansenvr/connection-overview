@@ -1,0 +1,12 @@
+services:
+  connection-overview:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: connection-overview
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 5173

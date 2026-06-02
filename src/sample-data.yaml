@@ -1,0 +1,17 @@
+- Bronapplicatie: ERP
+  Doelapplicatie: CRM
+  bronapplicatie Saas of on premises: On premises
+  Doelapplicatie Saas/on premises: SaaS
+  Soort koppeling: API
+
+- Bronapplicatie: CRM
+  Doelapplicatie: Datawarehouse
+  bronapplicatie Saas of on premises: SaaS
+  Doelapplicatie Saas/on premises: On premises
+  Soort koppeling: Batch
+
+- Bronapplicatie: HRM
+  Doelapplicatie: ERP
+  bronapplicatie Saas of on premises: SaaS
+  Doelapplicatie Saas/on premises: On premises
+  Soort koppeling: Event
