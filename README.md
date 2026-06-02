@@ -45,16 +45,16 @@ De app verwacht records met deze velden (hoofdlettergevoeligheid maakt niet uit)
 
 - Bronapplicatie
 - Doelapplicatie
-- bronapplicatie Saas of on premises
-- Doelapplicatie Saas/on premises
-- Soort koppeling
+- Brontype
+- Doeltype
+- Koppelingsoort
 
-De parser accepteert ook een aantal Engelse aliassen zoals `Source`, `Target` en `Connection type`.
+De parser accepteert ook oudere Nederlandse kolomnamen en een aantal Engelse aliassen zoals `Source`, `Target` en `Connection type`.
 
 ### CSV voorbeeld
 
 ```csv
-Bronapplicatie,Doelapplicatie,bronapplicatie Saas of on premises,Doelapplicatie Saas/on premises,Soort koppeling
+Bronapplicatie,Doelapplicatie,Brontype,Doeltype,Koppelingsoort
 ERP,CRM,On premises,SaaS,API
 CRM,Datawarehouse,SaaS,On premises,Batch
 HRM,ERP,SaaS,On premises,Event

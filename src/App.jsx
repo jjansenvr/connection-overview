@@ -11,7 +11,7 @@ import { buildGraph } from "./graphBuilder";
 import { parseByFormat } from "./parsers";
 import sampleYaml from "./sample-data.yaml?raw";
 
-const sampleCsv = `Bronapplicatie,Doelapplicatie,bronapplicatie Saas of on premises,Doelapplicatie Saas/on premises,Soort koppeling
+const sampleCsv = `Bronapplicatie,Doelapplicatie,Brontype,Doeltype,Koppelingsoort
 ERP,CRM,On premises,SaaS,API
 CRM,Datawarehouse,SaaS,On premises,Batch
 HRM,ERP,SaaS,On premises,Event`;
