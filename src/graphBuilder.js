@@ -1,5 +1,44 @@
+import { MarkerType } from "reactflow";
+import dagre from "dagre";
+
 const HOSTING_FALLBACK = "Unknown";
 const CONNECTION_FALLBACK = "Onbekend";
+const NODE_WIDTH = 220;
+const NODE_HEIGHT = 84;
+
+function layoutNodes(nodes, edges) {
+  const graph = new dagre.graphlib.Graph();
+  graph.setDefaultEdgeLabel(() => ({}));
+  graph.setGraph({ rankdir: "LR", ranksep: 100, nodesep: 40 });
+
+  nodes.forEach((node) => {
+    graph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
+  });
+
+  edges.forEach((edge) => {
+    graph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(graph);
+
+  return nodes.map((node) => {
+    const positioned = graph.node(node.id);
+
+    if (!positioned) {
+      return node;
+    }
+
+    return {
+      ...node,
+      sourcePosition: "right",
+      targetPosition: "left",
+      position: {
+        x: positioned.x - NODE_WIDTH / 2,
+        y: positioned.y - NODE_HEIGHT / 2
+      }
+    };
+  });
+}
 
 function normalizeHosting(raw) {
   const value = String(raw || "").trim();
@@ -92,7 +131,7 @@ export function buildGraph(records) {
       target: targetName,
       label: record.koppelingSoort || CONNECTION_FALLBACK,
       markerEnd: {
-        type: "arrowclosed"
+        type: MarkerType.ArrowClosed
       },
       style: {
         stroke: "#334155",
@@ -111,7 +150,7 @@ export function buildGraph(records) {
   });
 
   return {
-    nodes: Array.from(nodeMap.values()),
+    nodes: layoutNodes(Array.from(nodeMap.values()), edges),
     edges
   };
 }
