@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "elkjs": "^0.11.1",
     "js-yaml": "^4.1.0",
     "papaparse": "^5.4.1",
     "react": "^18.3.1",

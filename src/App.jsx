@@ -42,6 +42,22 @@ function NodeLabel({ data }) {
 
 const nodeTypes = { appNode: NodeLabel };
 
+function useTheme() {
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark" || saved === "light") return saved;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggle = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), []);
+  return { theme, toggle };
+}
+
 function getConnectedNodeIds(startId, edges) {
   const adjacency = new Map();
 
@@ -82,6 +98,7 @@ export default function App() {
   const [dragEnabled, setDragEnabled] = useState(true);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const parsed = useMemo(() => {
     try {
@@ -95,12 +112,14 @@ export default function App() {
   }, [input, format]);
 
   const graph = useMemo(() => buildGraph(parsed), [parsed]);
-  const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(graph.edges);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   useEffect(() => {
-    setNodes(graph.nodes);
-    setEdges(graph.edges);
+    applyElkLayout(graph.nodes, graph.edges).then(({ nodes: ln, edges: le }) => {
+      setNodes(ln);
+      setEdges(le);
+    });
     setSelectedNodeId(null);
   }, [graph, setEdges, setNodes]);
 
@@ -204,8 +223,21 @@ export default function App() {
   return (
     <div className="page">
       <header className="topbar">
-        <h1>Connection Overview</h1>
-        <p>Visualiseer applicatiekoppelingen uit CSV of YAML met React Flow.</p>
+        <div className="topbar-brand">
+          <h1><span className="brand-accent">Connection</span>Overview</h1>
+          <p>Visualiseer applicatiekoppelingen uit CSV of YAML met React Flow.</p>
+        </div>
+        <div className="topbar-actions">
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? "☀︎" : "☾"}
+          </button>
+        </div>
       </header>
 
       <main className="layout">
