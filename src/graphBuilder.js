@@ -1,6 +1,6 @@
 import { MarkerType } from "reactflow";
 
-import ELK from "elkjs/lib/elk.bundled.js";
+import ELK from "elkjs/lib/elk.bundled";
 
 const HOSTING_FALLBACK = "Unknown";
 const CONNECTION_FALLBACK = "Onbekend";

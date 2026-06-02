@@ -11,7 +11,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 
-import { buildGraph } from "./graphBuilder";
+import { applyElkLayout, buildGraph } from "./graphBuilder";
 import { parseByFormat } from "./parsers";
 import sampleYaml from "./sample-data.yaml?raw";
 
