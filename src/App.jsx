@@ -362,7 +362,8 @@ export default function App() {
   const filteredSets = useMemo(() => {
     const activeHostingsSet = new Set(activeHostings);
     const activeConnectionTypesSet = new Set(activeConnectionTypes);
-    const visibleAppIds = new Set();
+    const hostingMatchedAppIds = new Set();
+    const isAnyFilterActive = selectedHostings !== null || selectedConnectionTypes !== null;
 
     nodes.forEach((node) => {
       if (node.type !== "appNode") {
@@ -372,19 +373,38 @@ export default function App() {
       const types = node.data?.types || [];
       const matchesHosting = types.some((type) => activeHostingsSet.has(type));
       if (matchesHosting) {
-        visibleAppIds.add(node.id);
+        hostingMatchedAppIds.add(node.id);
       }
     });
 
     const visibleEdgeIds = new Set();
     edges.forEach((edge) => {
       const matchesConnectionType = activeConnectionTypesSet.has(edge.label);
-      const endpointsVisible = visibleAppIds.has(edge.source) && visibleAppIds.has(edge.target);
+      const endpointsVisible =
+        hostingMatchedAppIds.has(edge.source) && hostingMatchedAppIds.has(edge.target);
 
       if (matchesConnectionType && endpointsVisible) {
         visibleEdgeIds.add(edge.id);
       }
     });
+
+    const visibleAppIds = new Set(hostingMatchedAppIds);
+    if (isAnyFilterActive) {
+      const edgeConnectedAppIds = new Set();
+
+      edges.forEach((edge) => {
+        if (visibleEdgeIds.has(edge.id)) {
+          edgeConnectedAppIds.add(edge.source);
+          edgeConnectedAppIds.add(edge.target);
+        }
+      });
+
+      visibleAppIds.forEach((appId) => {
+        if (!edgeConnectedAppIds.has(appId)) {
+          visibleAppIds.delete(appId);
+        }
+      });
+    }
 
     const visibleGroupIds = new Set();
     nodes.forEach((node) => {
@@ -398,7 +418,7 @@ export default function App() {
       visibleEdgeIds,
       visibleGroupIds
     };
-  }, [nodes, edges, activeHostings, activeConnectionTypes]);
+  }, [nodes, edges, activeHostings, activeConnectionTypes, selectedHostings, selectedConnectionTypes]);
 
   const visibleEdgeList = useMemo(
     () => edges.filter((edge) => filteredSets.visibleEdgeIds.has(edge.id)),
