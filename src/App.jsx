@@ -21,6 +21,10 @@ CRM,Levert klantupdates,Datawarehouse,Verwerkt periodieke export,SaaS,On premise
 HRM,Publiceert medewerker-events,ERP,Valideert medewerkers,SaaS,On premises,Event`;
 
 function NodeLabel({ data }) {
+  const bronOpmerkingen = data.bronOpmerkingen || [];
+  const doelOpmerkingen = data.doelOpmerkingen || [];
+  const hasRemarks = bronOpmerkingen.length || doelOpmerkingen.length;
+
   return (
     <div className="node-label">
       <Handle type="target" position={Position.Left} />
@@ -32,8 +36,19 @@ function NodeLabel({ data }) {
           </div>
         ))}
       </div>
-      {(data.opmerkingen || []).length ? (
-        <div className="node-remarks">{data.opmerkingen.join(" • ")}</div>
+      {hasRemarks ? (
+        <div className="node-remarks">
+          {bronOpmerkingen.map((opmerking) => (
+            <div key={`bron-${opmerking}`}>
+              <span className="remark-label">Bron:</span> {opmerking}
+            </div>
+          ))}
+          {doelOpmerkingen.map((opmerking) => (
+            <div key={`doel-${opmerking}`}>
+              <span className="remark-label">Doel:</span> {opmerking}
+            </div>
+          ))}
+        </div>
       ) : null}
       <Handle type="source" position={Position.Right} />
     </div>

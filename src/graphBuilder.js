@@ -189,7 +189,8 @@ export function buildGraph(records) {
         id: name,
         label: name,
         types: new Set(),
-        opmerkingen: new Set()
+        bronOpmerkingen: new Set(),
+        doelOpmerkingen: new Set()
       });
     }
 
@@ -216,10 +217,10 @@ export function buildGraph(records) {
     const sourceOpmerking = String(record.bronOpmerking || "").trim();
     const targetOpmerking = String(record.doelOpmerking || "").trim();
     if (sourceOpmerking) {
-      sourceNode.opmerkingen.add(sourceOpmerking);
+      sourceNode.bronOpmerkingen.add(sourceOpmerking);
     }
     if (targetOpmerking) {
-      targetNode.opmerkingen.add(targetOpmerking);
+      targetNode.doelOpmerkingen.add(targetOpmerking);
     }
 
     edges.push({
@@ -248,7 +249,8 @@ export function buildGraph(records) {
 
   const nodes = Array.from(nodeMap.values()).map((node) => {
     const types = Array.from(node.types);
-    const opmerkingen = Array.from(node.opmerkingen);
+    const bronOpmerkingen = Array.from(node.bronOpmerkingen);
+    const doelOpmerkingen = Array.from(node.doelOpmerkingen);
     const primaryType = types[0] || HOSTING_FALLBACK;
 
     return {
@@ -257,7 +259,8 @@ export function buildGraph(records) {
       data: {
         label: node.label,
         types,
-        opmerkingen,
+        bronOpmerkingen,
+        doelOpmerkingen,
         color: nodeColorByHosting(primaryType)
       },
       position: { x: 0, y: 0 },

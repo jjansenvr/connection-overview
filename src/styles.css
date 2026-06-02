@@ -327,6 +327,11 @@ select:focus {
   line-height: 1.35;
 }
 
+.remark-label {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
 /* Legend */
 
 .legend {
