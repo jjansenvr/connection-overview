@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -19,6 +19,19 @@ const sampleCsv = `Bronapplicatie,Bronopmerking,Doelapplicatie,Doelopmerking,Bro
 ERP,Stuurt orderdata door,CRM,Ontvangt orderdata,On premises,SaaS,API
 CRM,Levert klantupdates,Datawarehouse,Verwerkt periodieke export,SaaS,On premises,Batch
 HRM,Publiceert medewerker-events,ERP,Valideert medewerkers,SaaS,On premises,Event`;
+
+const SAVED_FILES_STORAGE_KEY = "connection-overview.saved-files.v1";
+
+function formatFromFileName(fileName, fallbackFormat = "yaml") {
+  const lower = String(fileName || "").toLowerCase();
+  if (lower.endsWith(".csv")) {
+    return "csv";
+  }
+  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) {
+    return "yaml";
+  }
+  return fallbackFormat;
+}
 
 function NodeLabel({ data }) {
   const bronOpmerkingen = data.bronOpmerkingen || [];
@@ -110,10 +123,204 @@ export default function App() {
   const [format, setFormat] = useState("yaml");
   const [input, setInput] = useState(sampleYaml);
   const [error, setError] = useState("");
+  const [savedFiles, setSavedFiles] = useState([]);
+  const [activeSavedFileId, setActiveSavedFileId] = useState("");
+  const [renameValue, setRenameValue] = useState("");
+  const [isUploadCollapsed, setIsUploadCollapsed] = useState(false);
   const [dragEnabled, setDragEnabled] = useState(true);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const [selectedHostings, setSelectedHostings] = useState(null);
+  const [selectedConnectionTypes, setSelectedConnectionTypes] = useState(null);
+  const importInputRef = useRef(null);
   const { theme, toggle: toggleTheme } = useTheme();
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SAVED_FILES_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      const parsedFiles = JSON.parse(raw);
+      if (!Array.isArray(parsedFiles)) {
+        return;
+      }
+
+      const normalized = parsedFiles
+        .map((entry) => ({
+          id: String(entry.id || ""),
+          name: String(entry.name || "Naamloos bestand"),
+          format: entry.format === "csv" ? "csv" : "yaml",
+          input: String(entry.input || ""),
+          updatedAt: Number(entry.updatedAt) || Date.now()
+        }))
+        .filter((entry) => entry.id && entry.input)
+        .sort((a, b) => b.updatedAt - a.updatedAt);
+
+      setSavedFiles(normalized);
+    } catch {
+      setSavedFiles([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(SAVED_FILES_STORAGE_KEY, JSON.stringify(savedFiles));
+  }, [savedFiles]);
+
+  useEffect(() => {
+    if (activeSavedFileId && !savedFiles.some((file) => file.id === activeSavedFileId)) {
+      setActiveSavedFileId("");
+    }
+  }, [savedFiles, activeSavedFileId]);
+
+  const activeSavedFile = useMemo(
+    () => savedFiles.find((file) => file.id === activeSavedFileId) || null,
+    [savedFiles, activeSavedFileId]
+  );
+
+  useEffect(() => {
+    setRenameValue(activeSavedFile?.name || "");
+  }, [activeSavedFile]);
+
+  const upsertSavedFile = useCallback((entry) => {
+    setSavedFiles((previous) => {
+      const exists = previous.some((item) => item.id === entry.id);
+      const next = exists
+        ? previous.map((item) => (item.id === entry.id ? entry : item))
+        : [entry, ...previous];
+
+      return next.sort((a, b) => b.updatedAt - a.updatedAt);
+    });
+    setActiveSavedFileId(entry.id);
+  }, []);
+
+  const loadSavedFile = useCallback(
+    (fileId) => {
+      setActiveSavedFileId(fileId);
+      const selectedFile = savedFiles.find((file) => file.id === fileId);
+      if (!selectedFile) {
+        return;
+      }
+
+      setFormat(selectedFile.format);
+      setInput(selectedFile.input);
+      setError("");
+    },
+    [savedFiles]
+  );
+
+  const saveCurrentDataset = useCallback(() => {
+    const datasetName = `Dataset ${new Date().toLocaleString("nl-NL")}`;
+    const entry = {
+      id: `manual-${Date.now()}`,
+      name: datasetName,
+      format,
+      input,
+      updatedAt: Date.now()
+    };
+
+    upsertSavedFile(entry);
+  }, [format, input, upsertSavedFile]);
+
+  const deleteActiveSavedFile = useCallback(() => {
+    if (!activeSavedFileId) {
+      return;
+    }
+
+    setSavedFiles((previous) => previous.filter((file) => file.id !== activeSavedFileId));
+    setActiveSavedFileId("");
+  }, [activeSavedFileId]);
+
+  const renameActiveSavedFile = useCallback(() => {
+    const nextName = renameValue.trim();
+    if (!activeSavedFileId || !nextName) {
+      return;
+    }
+
+    setSavedFiles((previous) =>
+      previous.map((file) =>
+        file.id === activeSavedFileId
+          ? {
+              ...file,
+              name: nextName,
+              updatedAt: Date.now()
+            }
+          : file
+      )
+    );
+  }, [activeSavedFileId, renameValue]);
+
+  const exportSavedFiles = useCallback(() => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      version: 1,
+      files: savedFiles
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `connection-overview-saved-files-${Date.now()}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  }, [savedFiles]);
+
+  const onImportSavedFiles = useCallback((event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported = JSON.parse(String(reader.result || "{}"));
+        const incoming = Array.isArray(imported)
+          ? imported
+          : Array.isArray(imported.files)
+            ? imported.files
+            : null;
+
+        if (!incoming) {
+          throw new Error("Ongeldig importbestand");
+        }
+
+        const normalized = incoming
+          .map((entry) => ({
+            id: String(entry.id || `import-${Date.now()}-${Math.random().toString(36).slice(2)}`),
+            name: String(entry.name || "Naamloos bestand"),
+            format: entry.format === "csv" ? "csv" : "yaml",
+            input: String(entry.input || ""),
+            updatedAt: Number(entry.updatedAt) || Date.now()
+          }))
+          .filter((entry) => entry.input);
+
+        if (!normalized.length) {
+          throw new Error("Geen bruikbare datasets gevonden");
+        }
+
+        setSavedFiles((previous) => {
+          const map = new Map(previous.map((item) => [item.id, item]));
+          normalized.forEach((item) => {
+            map.set(item.id, item);
+          });
+          return Array.from(map.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+        });
+
+        setError("");
+      } catch {
+        setError("Import mislukt: controleer het JSON-bestand.");
+      } finally {
+        event.target.value = "";
+      }
+    };
+
+    reader.readAsText(file);
+  }, []);
 
   const parsed = useMemo(() => {
     try {
@@ -127,6 +334,20 @@ export default function App() {
   }, [input, format]);
 
   const graph = useMemo(() => buildGraph(parsed), [parsed]);
+
+  const hostingOptions = useMemo(() => {
+    const options = new Set();
+    graph.nodes.forEach((node) => {
+      (node.data?.types || []).forEach((type) => options.add(type));
+    });
+    return Array.from(options).sort((a, b) => a.localeCompare(b));
+  }, [graph.nodes]);
+
+  const connectionTypeOptions = useMemo(() => {
+    const options = new Set(graph.edges.map((edge) => edge.label));
+    return Array.from(options).sort((a, b) => a.localeCompare(b));
+  }, [graph.edges]);
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -138,25 +359,81 @@ export default function App() {
     setSelectedNodeId(null);
   }, [graph, setEdges, setNodes]);
 
+  const activeHostings = selectedHostings ?? hostingOptions;
+  const activeConnectionTypes = selectedConnectionTypes ?? connectionTypeOptions;
+
+  const filteredSets = useMemo(() => {
+    const activeHostingsSet = new Set(activeHostings);
+    const activeConnectionTypesSet = new Set(activeConnectionTypes);
+    const visibleAppIds = new Set();
+
+    nodes.forEach((node) => {
+      if (node.type !== "appNode") {
+        return;
+      }
+
+      const types = node.data?.types || [];
+      const matchesHosting = types.some((type) => activeHostingsSet.has(type));
+      if (matchesHosting) {
+        visibleAppIds.add(node.id);
+      }
+    });
+
+    const visibleEdgeIds = new Set();
+    edges.forEach((edge) => {
+      const matchesConnectionType = activeConnectionTypesSet.has(edge.label);
+      const endpointsVisible = visibleAppIds.has(edge.source) && visibleAppIds.has(edge.target);
+
+      if (matchesConnectionType && endpointsVisible) {
+        visibleEdgeIds.add(edge.id);
+      }
+    });
+
+    const visibleGroupIds = new Set();
+    nodes.forEach((node) => {
+      if (node.type === "appNode" && visibleAppIds.has(node.id) && node.parentNode) {
+        visibleGroupIds.add(node.parentNode);
+      }
+    });
+
+    return {
+      visibleAppIds,
+      visibleEdgeIds,
+      visibleGroupIds
+    };
+  }, [nodes, edges, activeHostings, activeConnectionTypes]);
+
+  const visibleEdgeList = useMemo(
+    () => edges.filter((edge) => filteredSets.visibleEdgeIds.has(edge.id)),
+    [edges, filteredSets.visibleEdgeIds]
+  );
+
+  useEffect(() => {
+    if (selectedNodeId && !filteredSets.visibleAppIds.has(selectedNodeId)) {
+      setSelectedNodeId(null);
+    }
+  }, [selectedNodeId, filteredSets.visibleAppIds]);
+
   const selectedCluster = useMemo(() => {
     if (!selectedNodeId) {
       return null;
     }
 
-    return getConnectedNodeIds(selectedNodeId, edges);
-  }, [selectedNodeId, edges]);
+    return getConnectedNodeIds(selectedNodeId, visibleEdgeList);
+  }, [selectedNodeId, visibleEdgeList]);
 
   const displayNodes = useMemo(() => {
-    if (!selectedCluster) {
-      return nodes;
-    }
-
     return nodes.map((node) => {
-      const isInFocus = selectedCluster.has(node.id);
+      const isAppNode = node.type === "appNode";
+      const isVisible = isAppNode
+        ? filteredSets.visibleAppIds.has(node.id)
+        : filteredSets.visibleGroupIds.has(node.id);
+      const isInFocus = !selectedCluster || !isAppNode || selectedCluster.has(node.id);
       const isSelected = node.id === selectedNodeId;
 
       return {
         ...node,
+        hidden: !isVisible,
         style: {
           ...node.style,
           opacity: isInFocus ? 1 : 0.2,
@@ -164,18 +441,17 @@ export default function App() {
         }
       };
     });
-  }, [nodes, selectedCluster, selectedNodeId]);
+  }, [nodes, selectedCluster, selectedNodeId, filteredSets.visibleAppIds, filteredSets.visibleGroupIds]);
 
   const displayEdges = useMemo(() => {
-    if (!selectedCluster) {
-      return edges;
-    }
-
     return edges.map((edge) => {
-      const isInFocus = selectedCluster.has(edge.source) && selectedCluster.has(edge.target);
+      const isVisible = filteredSets.visibleEdgeIds.has(edge.id);
+      const isInFocus =
+        !selectedCluster || (selectedCluster.has(edge.source) && selectedCluster.has(edge.target));
 
       return {
         ...edge,
+        hidden: !isVisible,
         animated: isInFocus,
         style: {
           ...edge.style,
@@ -192,12 +468,45 @@ export default function App() {
         }
       };
     });
-  }, [edges, selectedCluster]);
+  }, [edges, selectedCluster, filteredSets.visibleEdgeIds]);
+
+  const toggleHostingFilter = useCallback(
+    (value) => {
+      setSelectedHostings((previous) => {
+        const base = previous ?? hostingOptions;
+        const next = base.includes(value)
+          ? base.filter((item) => item !== value)
+          : [...base, value];
+
+        return next.length === hostingOptions.length ? null : next;
+      });
+    },
+    [hostingOptions]
+  );
+
+  const toggleConnectionTypeFilter = useCallback(
+    (value) => {
+      setSelectedConnectionTypes((previous) => {
+        const base = previous ?? connectionTypeOptions;
+        const next = base.includes(value)
+          ? base.filter((item) => item !== value)
+          : [...base, value];
+
+        return next.length === connectionTypeOptions.length ? null : next;
+      });
+    },
+    [connectionTypeOptions]
+  );
+
+  const resetFilters = useCallback(() => {
+    setSelectedHostings(null);
+    setSelectedConnectionTypes(null);
+  }, []);
 
   const handleNodeClick = useCallback(
     (_, node) => {
       setSelectedNodeId(node.id);
-      const connected = getConnectedNodeIds(node.id, edges);
+      const connected = getConnectedNodeIds(node.id, visibleEdgeList);
 
       if (reactFlowInstance && connected.size) {
         reactFlowInstance.fitView({
@@ -207,7 +516,7 @@ export default function App() {
         });
       }
     },
-    [edges, reactFlowInstance]
+    [reactFlowInstance, visibleEdgeList]
   );
 
   const clearSelection = useCallback(() => {
@@ -224,15 +533,18 @@ export default function App() {
     }
 
     const text = await file.text();
-    const fileName = file.name.toLowerCase();
+    const nextFormat = formatFromFileName(file.name, format);
 
-    if (fileName.endsWith(".csv")) {
-      setFormat("csv");
-    } else if (fileName.endsWith(".yaml") || fileName.endsWith(".yml")) {
-      setFormat("yaml");
-    }
-
+    setFormat(nextFormat);
     setInput(text);
+
+    upsertSavedFile({
+      id: `upload-${file.name.toLowerCase()}`,
+      name: file.name,
+      format: nextFormat,
+      input: text,
+      updatedAt: Date.now()
+    });
   };
 
   return (
@@ -256,61 +568,196 @@ export default function App() {
       </header>
 
       <main className="layout">
-        <section className="panel left-panel">
-          <div className="panel-header">
-            <h2>Data Input</h2>
-            <label className="file-btn">
-              Bestand kiezen
-              <input
-                type="file"
-                accept=".csv,.yaml,.yml,text/csv"
-                onClick={(e) => {
-                  e.currentTarget.value = "";
-                }}
-                onChange={onFileUpload}
-              />
-            </label>
-          </div>
+        <div className="left-column">
+          <section className={`panel left-panel ${isUploadCollapsed ? "collapsed" : ""}`}>
+            <div className="panel-header">
+              <h2>Data Input</h2>
+              <div className="panel-header-actions">
+                <label className="file-btn">
+                  Bestand kiezen
+                  <input
+                    type="file"
+                    accept=".csv,.yaml,.yml,text/csv"
+                    onClick={(e) => {
+                      e.currentTarget.value = "";
+                    }}
+                    onChange={onFileUpload}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="collapse-btn"
+                  onClick={() => setIsUploadCollapsed((value) => !value)}
+                  aria-label={isUploadCollapsed ? "Open invoerpaneel" : "Sluit invoerpaneel"}
+                  title={isUploadCollapsed ? "Open invoerpaneel" : "Sluit invoerpaneel"}
+                >
+                  {isUploadCollapsed ? "▾" : "▴"}
+                </button>
+              </div>
+            </div>
 
-          <div className="format-row">
-            <label>
-              Formaat
-              <select value={format} onChange={(e) => setFormat(e.target.value)}>
-                <option value="yaml">YAML</option>
-                <option value="csv">CSV</option>
-              </select>
-            </label>
+            {!isUploadCollapsed ? (
+              <>
+                <div className="format-row">
+                  <label>
+                    Formaat
+                    <select value={format} onChange={(e) => setFormat(e.target.value)}>
+                      <option value="yaml">YAML</option>
+                      <option value="csv">CSV</option>
+                    </select>
+                  </label>
 
-            <button
-              type="button"
-              onClick={() => setInput(format === "yaml" ? sampleYaml : sampleCsv)}
-            >
-              Laad voorbeeld
-            </button>
-          </div>
+                  <button
+                    type="button"
+                    onClick={() => setInput(format === "yaml" ? sampleYaml : sampleCsv)}
+                  >
+                    Laad voorbeeld
+                  </button>
+                </div>
 
-          <div className="options-row">
-            <label className="toggle">
-              <input
-                type="checkbox"
-                checked={dragEnabled}
-                onChange={(e) => setDragEnabled(e.target.checked)}
-              />
-              Nodes verslepen
-            </label>
-            <span className="hint">Klik op een node om verbonden onderdelen te focussen.</span>
-          </div>
+                <div className="saved-row">
+                  <label>
+                    Opgeslagen bestanden
+                    <select
+                      value={activeSavedFileId}
+                      onChange={(e) => loadSavedFile(e.target.value)}
+                    >
+                      <option value="">Kies een opgeslagen bestand</option>
+                      {savedFiles.map((file) => (
+                        <option key={file.id} value={file.id}>
+                          {file.name} ({file.format.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="saved-rename-row">
+                    <input
+                      type="text"
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      placeholder="Nieuwe naam voor selectie"
+                      disabled={!activeSavedFileId}
+                    />
+                    <button
+                      type="button"
+                      onClick={renameActiveSavedFile}
+                      disabled={!activeSavedFileId || !renameValue.trim()}
+                    >
+                      Hernoem
+                    </button>
+                  </div>
+                  <div className="saved-actions">
+                    <button type="button" onClick={saveCurrentDataset}>Opslaan huidige</button>
+                    <button
+                      type="button"
+                      onClick={deleteActiveSavedFile}
+                      disabled={!activeSavedFileId}
+                    >
+                      Verwijder
+                    </button>
+                  </div>
+                  <div className="saved-actions">
+                    <button
+                      type="button"
+                      onClick={exportSavedFiles}
+                      disabled={!savedFiles.length}
+                    >
+                      Exporteer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => importInputRef.current?.click()}
+                    >
+                      Importeer
+                    </button>
+                    <input
+                      ref={importInputRef}
+                      type="file"
+                      accept="application/json,.json"
+                      onChange={onImportSavedFiles}
+                      className="hidden-input"
+                    />
+                  </div>
+                </div>
+                <span className="hint">Geuploade bestanden worden automatisch opgeslagen in je browser.</span>
 
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            spellCheck={false}
-            placeholder="Plak hier CSV of YAML data"
-          />
+                <div className="options-row">
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={dragEnabled}
+                      onChange={(e) => setDragEnabled(e.target.checked)}
+                    />
+                    Nodes verslepen
+                  </label>
+                  <span className="hint">Klik op een node om verbonden onderdelen te focussen.</span>
+                </div>
 
-          {error ? <p className="error">{error}</p> : null}
-          <p className="meta">Records: {parsed.length}</p>
-        </section>
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  spellCheck={false}
+                  placeholder="Plak hier CSV of YAML data"
+                />
+
+                {error ? <p className="error">{error}</p> : null}
+                <p className="meta">Records: {parsed.length}</p>
+              </>
+            ) : (
+              <p className="meta">Paneel ingeklapt. Gebruik "Bestand kiezen" om direct nieuwe data te laden.</p>
+            )}
+          </section>
+
+          <section className="panel filter-panel">
+            <div className="panel-header">
+              <h2>Filters</h2>
+              <button type="button" onClick={resetFilters}>Reset</button>
+            </div>
+
+            <div className="filter-group">
+              <p className="filter-title">Hosting</p>
+              <div className="filter-badges">
+                {hostingOptions.map((option) => {
+                  const active = activeHostings.includes(option);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`filter-badge ${active ? "active" : ""}`}
+                      onClick={() => toggleHostingFilter(option)}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <p className="filter-title">Koppelingsoort</p>
+              <div className="filter-badges">
+                {connectionTypeOptions.map((option) => {
+                  const active = activeConnectionTypes.includes(option);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`filter-badge ${active ? "active" : ""}`}
+                      onClick={() => toggleConnectionTypeFilter(option)}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <p className="meta">
+              Zichtbaar: {filteredSets.visibleAppIds.size}/{nodes.filter((node) => node.type === "appNode").length} applicaties,
+              {" "}{filteredSets.visibleEdgeIds.size}/{edges.length} koppelingen
+            </p>
+          </section>
+        </div>
 
         <section className="panel flow-panel">
           <ReactFlow

@@ -147,6 +147,13 @@ body {
   min-height: 0;
 }
 
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
 .panel {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -170,6 +177,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .panel-header h2 {
@@ -199,11 +212,50 @@ body {
   display: none;
 }
 
+.collapse-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.left-panel.collapsed {
+  gap: 8px;
+}
+
 .format-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   gap: 10px;
+}
+
+.saved-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saved-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.saved-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.saved-actions button {
+  flex: 1;
 }
 
 .options-row {
@@ -240,6 +292,10 @@ textarea {
   font: inherit;
 }
 
+input {
+  font: inherit;
+}
+
 select,
 button {
   border: 1px solid var(--border-dim);
@@ -248,6 +304,15 @@ button {
   background-color: var(--input-bg);
   color: var(--text-primary);
   cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+input[type="text"] {
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 7px 10px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
@@ -270,10 +335,24 @@ textarea {
 }
 
 textarea:focus,
-select:focus {
+select:focus,
+input[type="text"]:focus {
   outline: none;
   border-color: var(--accent-color);
   box-shadow: 0 0 0 2px rgba(253, 195, 0, 0.2);
+}
+
+.saved-rename-row {
+  display: flex;
+  gap: 8px;
+}
+
+.saved-rename-row input {
+  flex: 1;
+}
+
+.hidden-input {
+  display: none;
 }
 
 .error {
@@ -286,6 +365,49 @@ select:focus {
   margin: 0;
   color: var(--text-secondary);
   font-size: 0.9rem;
+}
+
+.filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-title {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.filter-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-badge {
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.filter-badge.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #1a1a1a;
+  font-weight: 700;
 }
 
 .flow-panel {
@@ -382,7 +504,19 @@ select:focus {
     grid-template-rows: auto 1fr;
   }
 
+  .left-column {
+    order: 0;
+  }
+
   .flow-panel {
     min-height: 460px;
+  }
+
+  .saved-actions {
+    flex-direction: column;
+  }
+
+  .saved-rename-row {
+    flex-direction: column;
   }
 }
