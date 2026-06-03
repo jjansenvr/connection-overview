@@ -793,13 +793,6 @@ export default function App() {
                   <span className="hint">Klik op een node om verbonden onderdelen te focussen.</span>
                 </div>
 
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  spellCheck={false}
-                  placeholder="Plak hier CSV of YAML data"
-                />
-
                 {error ? <p className="error">{error}</p> : null}
                 <p className="meta">Records: {parsed.length}</p>
               </>
