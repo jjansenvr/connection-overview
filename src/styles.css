@@ -9,6 +9,8 @@
   --bg-color:      light-dark(#f8f9fa, #1e1e1e);
   --bg-secondary:  light-dark(#ffffff, #252525);
   --bg-tertiary:   light-dark(#f1f3f5, #2d2d2d);
+  --flow-bg:       light-dark(#f8fafc, #161b22);
+  --node-bg:       light-dark(#ffffff, #2b3440);
 
   /* Text */
   --text-primary:   light-dark(#212529, #eeeeee);
@@ -34,6 +36,8 @@
                0 0   8px  light-dark(rgba(178, 137, 0, 0.15), rgba(253, 195, 0, 0.15));
   --shadow-md: 0 4px 12px light-dark(rgba(178, 137, 0, 0.5),  rgba(253, 195, 0, 0.5)),
                0 0   16px light-dark(rgba(178, 137, 0, 0.3),  rgba(253, 195, 0, 0.3));
+  --node-shadow: 0 1px 3px light-dark(rgba(15, 23, 42, 0.16), rgba(15, 23, 42, 0.45)),
+                 0 10px 26px light-dark(rgba(15, 23, 42, 0.08), rgba(2, 6, 23, 0.7));
 
   background-color: var(--bg-color);
   color: var(--text-primary);
@@ -148,6 +152,13 @@ body {
 }
 
 .left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.right-column {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -467,6 +478,74 @@ input[type="text"]:focus {
 .flow-panel {
   min-height: 600px;
   overflow: hidden;
+  background: var(--flow-bg);
+}
+
+.flow-panel .react-flow__renderer,
+.flow-panel .react-flow__pane,
+.flow-panel .react-flow__viewport {
+  background: var(--flow-bg);
+}
+
+.flow-panel .react-flow__node {
+  box-shadow: var(--node-shadow);
+}
+
+.flow-panel .react-flow__node.selected,
+.flow-panel .react-flow__node:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.table-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  min-height: 220px;
+}
+
+.table-panel .panel-header {
+  align-items: center;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+  background: var(--bg-secondary);
+}
+
+.data-table th,
+.data-table td {
+  border-bottom: 1px solid var(--border-dim);
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  vertical-align: top;
+}
+
+.data-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-tertiary);
+  z-index: 1;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.data-table tbody tr:hover {
+  background: var(--bg-tertiary);
 }
 
 /* ReactFlow node */
@@ -560,6 +639,10 @@ input[type="text"]:focus {
 
   .left-column {
     order: 0;
+  }
+
+  .right-column {
+    order: 1;
   }
 
   .flow-panel {

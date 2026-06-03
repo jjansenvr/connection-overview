@@ -15,6 +15,17 @@ import { applyElkLayout, buildGraph } from "./graphBuilder";
 import { parseByFormat } from "./parsers";
 
 const SAVED_FILES_STORAGE_KEY = "connection-overview.saved-files.v1";
+const ACTIVE_SAVED_FILE_STORAGE_KEY = "connection-overview.active-file-id.v1";
+
+const TABLE_COLUMNS = [
+  { key: "bronapplicatie", label: "Bronapplicatie" },
+  { key: "doelapplicatie", label: "Doelapplicatie" },
+  { key: "bronHosting", label: "Brontype" },
+  { key: "doelHosting", label: "Doeltype" },
+  { key: "koppelingSoort", label: "Koppelingsoort" },
+  { key: "bronOpmerking", label: "Bronopmerking" },
+  { key: "doelOpmerking", label: "Doelopmerking" }
+];
 
 function formatFromFileName(fileName, fallbackFormat = "yaml") {
   const lower = String(fileName || "").toLowerCase();
@@ -118,7 +129,14 @@ export default function App() {
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
   const [savedFiles, setSavedFiles] = useState([]);
-  const [activeSavedFileId, setActiveSavedFileId] = useState("");
+  const [activeSavedFileId, setActiveSavedFileId] = useState(() => {
+    try {
+      return localStorage.getItem(ACTIVE_SAVED_FILE_STORAGE_KEY) || "";
+    } catch {
+      return "";
+    }
+  });
+  const [hasLoadedSavedFiles, setHasLoadedSavedFiles] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [isUploadCollapsed, setIsUploadCollapsed] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -134,11 +152,13 @@ export default function App() {
     try {
       const raw = localStorage.getItem(SAVED_FILES_STORAGE_KEY);
       if (!raw) {
+        setHasLoadedSavedFiles(true);
         return;
       }
 
       const parsedFiles = JSON.parse(raw);
       if (!Array.isArray(parsedFiles)) {
+        setHasLoadedSavedFiles(true);
         return;
       }
 
@@ -154,14 +174,42 @@ export default function App() {
         .sort((a, b) => b.updatedAt - a.updatedAt);
 
       setSavedFiles(normalized);
+
+      const storedActiveId = localStorage.getItem(ACTIVE_SAVED_FILE_STORAGE_KEY) || "";
+      const restoredActiveFile =
+        normalized.find((entry) => entry.id === storedActiveId) || normalized[0] || null;
+
+      if (restoredActiveFile) {
+        setActiveSavedFileId(restoredActiveFile.id);
+        setFormat(restoredActiveFile.format);
+        setInput(restoredActiveFile.input);
+      }
     } catch {
       setSavedFiles([]);
+    } finally {
+      setHasLoadedSavedFiles(true);
     }
   }, []);
 
   useEffect(() => {
+    if (!hasLoadedSavedFiles) {
+      return;
+    }
     localStorage.setItem(SAVED_FILES_STORAGE_KEY, JSON.stringify(savedFiles));
-  }, [savedFiles]);
+  }, [savedFiles, hasLoadedSavedFiles]);
+
+  useEffect(() => {
+    if (!hasLoadedSavedFiles) {
+      return;
+    }
+
+    if (activeSavedFileId) {
+      localStorage.setItem(ACTIVE_SAVED_FILE_STORAGE_KEY, activeSavedFileId);
+      return;
+    }
+
+    localStorage.removeItem(ACTIVE_SAVED_FILE_STORAGE_KEY);
+  }, [activeSavedFileId, hasLoadedSavedFiles]);
 
   useEffect(() => {
     if (activeSavedFileId && !savedFiles.some((file) => file.id === activeSavedFileId)) {
@@ -828,38 +876,76 @@ export default function App() {
           </section>
         </div>
 
-        <section className="panel flow-panel">
-          <ReactFlow
-            nodes={displayNodes}
-            edges={displayEdges}
-            nodeTypes={nodeTypes}
-            onInit={setReactFlowInstance}
-            onNodeClick={handleNodeClick}
-            onPaneClick={clearSelection}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            nodesDraggable={dragEnabled}
-            fitView
-            minZoom={0.2}
-            maxZoom={1.8}
-          >
-            <Background color="#cbd5e1" gap={18} />
-            <Controls />
-            <MiniMap pannable zoomable />
-            <Panel position="top-right" className="legend">
-              <strong>Legend</strong>
-              <span>
-                <i className="dot saas" /> SaaS
-              </span>
-              <span>
-                <i className="dot onprem" /> On-premises
-              </span>
-              <span>
-                <i className="dot unknown" /> Unknown
-              </span>
-            </Panel>
-          </ReactFlow>
-        </section>
+        <div className="right-column">
+          <section className="panel flow-panel">
+            <ReactFlow
+              nodes={displayNodes}
+              edges={displayEdges}
+              nodeTypes={nodeTypes}
+              onInit={setReactFlowInstance}
+              onNodeClick={handleNodeClick}
+              onPaneClick={clearSelection}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              nodesDraggable={dragEnabled}
+              fitView
+              minZoom={0.2}
+              maxZoom={1.8}
+            >
+              <Background color="#cbd5e1" gap={18} />
+              <Controls />
+              <MiniMap pannable zoomable />
+              <Panel position="top-right" className="legend">
+                <strong>Legend</strong>
+                <span>
+                  <i className="dot saas" /> SaaS
+                </span>
+                <span>
+                  <i className="dot onprem" /> On-premises
+                </span>
+                <span>
+                  <i className="dot unknown" /> Unknown
+                </span>
+              </Panel>
+            </ReactFlow>
+          </section>
+
+          <section className="panel table-panel" aria-label="Tabelweergave van ingevoerde records">
+            <div className="panel-header">
+              <h2>Table View</h2>
+              <p className="meta">Rijen: {parsed.length}</p>
+            </div>
+
+            {parsed.length ? (
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">#</th>
+                      {TABLE_COLUMNS.map((column) => (
+                        <th key={column.key} scope="col">
+                          {column.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parsed.map((record, index) => (
+                      <tr key={`${record.bronapplicatie}-${record.doelapplicatie}-${index}`}>
+                        <td>{index + 1}</td>
+                        {TABLE_COLUMNS.map((column) => (
+                          <td key={column.key}>{record[column.key] || "-"}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="meta">Geen records om te tonen.</p>
+            )}
+          </section>
+        </div>
       </main>
     </div>
   );

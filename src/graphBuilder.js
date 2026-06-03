@@ -266,9 +266,9 @@ export function buildGraph(records) {
       position: { x: 0, y: 0 },
       style: {
         borderRadius: 10,
-        border: `2px solid ${nodeColorByHosting(primaryType)}`,
+        border: `2.5px solid ${nodeColorByHosting(primaryType)}`,
         padding: 10,
-        background: "var(--bg-secondary)",
+        background: "var(--node-bg)",
         minWidth: 210
       }
     };
