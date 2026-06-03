@@ -548,6 +548,60 @@ input[type="text"]:focus {
   background: var(--bg-tertiary);
 }
 
+.row-highlighted {
+  background: light-dark(rgba(253, 195, 0, 0.12), rgba(253, 195, 0, 0.1)) !important;
+  outline: 1.5px solid var(--accent-color);
+  outline-offset: -1px;
+}
+
+.table-cell-input {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 3px 5px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.82rem;
+  min-width: 80px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.table-cell-input:hover {
+  border-color: var(--border-dim);
+  background: var(--input-bg);
+}
+
+.table-cell-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  background: var(--input-bg);
+  box-shadow: 0 0 0 2px rgba(253, 195, 0, 0.18);
+}
+
+.row-delete-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 4px;
+  font-size: 15px;
+  line-height: 1;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+
+.row-delete-btn:hover {
+  color: var(--error-color);
+  border-color: var(--error-color);
+  background: light-dark(rgba(220, 53, 69, 0.08), rgba(255, 107, 107, 0.1));
+}
+
 /* ReactFlow node */
 
 .node-label {

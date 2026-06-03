@@ -146,6 +146,8 @@ export default function App() {
   const [selectedHostings, setSelectedHostings] = useState(null);
   const [selectedConnectionTypes, setSelectedConnectionTypes] = useState(null);
   const importInputRef = useRef(null);
+  const tableBodyRef = useRef(null);
+  const [editedRows, setEditedRows] = useState([]);
   const { theme, toggle: toggleTheme } = useTheme();
 
   useEffect(() => {
@@ -378,7 +380,11 @@ export default function App() {
     }
   }, [input, format]);
 
-  const graph = useMemo(() => buildGraph(parsed), [parsed]);
+  useEffect(() => {
+    setEditedRows(parsed);
+  }, [parsed]);
+
+  const graph = useMemo(() => buildGraph(editedRows), [editedRows]);
 
   const hostingOptions = useMemo(() => {
     const options = new Set();
@@ -591,6 +597,85 @@ export default function App() {
     }
   }, [reactFlowInstance]);
 
+  const updateCell = useCallback((rowIndex, key, value) => {
+    setEditedRows((prev) => {
+      const next = [...prev];
+      next[rowIndex] = { ...next[rowIndex], [key]: value };
+      return next;
+    });
+  }, []);
+
+  const deleteRow = useCallback((rowIndex) => {
+    setEditedRows((prev) => prev.filter((_, i) => i !== rowIndex));
+  }, []);
+
+  const addRow = useCallback(() => {
+    setEditedRows((prev) => [
+      ...prev,
+      {
+        bronapplicatie: "",
+        doelapplicatie: "",
+        bronHosting: "",
+        doelHosting: "",
+        koppelingSoort: "",
+        bronOpmerking: "",
+        doelOpmerking: ""
+      }
+    ]);
+  }, []);
+
+  const downloadEditedCSV = useCallback(() => {
+    const headers = TABLE_COLUMNS.map((c) => c.label);
+    const escape = (val) => {
+      const s = String(val || "");
+      return s.includes(",") || s.includes('"') || s.includes("\n")
+        ? `"${s.replace(/"/g, '""')}"`
+        : s;
+    };
+    const lines = [
+      headers.join(","),
+      ...editedRows.map((row) => TABLE_COLUMNS.map((col) => escape(row[col.key])).join(","))
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${(activeSavedFile?.name || "export").replace(/\.[^.]+$/, "")}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  }, [editedRows, activeSavedFile]);
+
+  const handleRowClick = useCallback(
+    (record) => {
+      const nodeId = record.bronapplicatie;
+      if (!nodeId) return;
+      setSelectedNodeId(nodeId);
+      if (!filteredSets.visibleAppIds.has(nodeId)) return;
+      const connected = getConnectedNodeIds(nodeId, visibleEdgeList);
+      if (reactFlowInstance && connected.size) {
+        reactFlowInstance.fitView({
+          nodes: Array.from(connected).map((id) => ({ id })),
+          padding: 0.25,
+          duration: 350
+        });
+      }
+    },
+    [reactFlowInstance, visibleEdgeList, filteredSets]
+  );
+
+  useEffect(() => {
+    if (!selectedNodeId || !tableBodyRef.current) return;
+    const firstMatchIndex = editedRows.findIndex(
+      (r) => r.bronapplicatie === selectedNodeId || r.doelapplicatie === selectedNodeId
+    );
+    if (firstMatchIndex !== -1) {
+      const rowElements = tableBodyRef.current.querySelectorAll("tr");
+      rowElements[firstMatchIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedNodeId, editedRows]);
+
   const onFileUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -794,7 +879,7 @@ export default function App() {
                 </div>
 
                 {error ? <p className="error">{error}</p> : null}
-                <p className="meta">Records: {parsed.length}</p>
+                <p className="meta">Records: {editedRows.length}</p>
               </>
             ) : (
               <>
@@ -906,10 +991,23 @@ export default function App() {
           <section className="panel table-panel" aria-label="Tabelweergave van ingevoerde records">
             <div className="panel-header">
               <h2>Table View</h2>
-              <p className="meta">Rijen: {parsed.length}</p>
+              <div className="panel-header-actions">
+                <button type="button" onClick={addRow} title="Voeg een lege rij toe">
+                  + Rij
+                </button>
+                <button
+                  type="button"
+                  onClick={downloadEditedCSV}
+                  disabled={!editedRows.length}
+                  title="Download als CSV"
+                >
+                  ↓ CSV
+                </button>
+                <p className="meta">Rijen: {editedRows.length}</p>
+              </div>
             </div>
 
-            {parsed.length ? (
+            {editedRows.length ? (
               <div className="table-wrap">
                 <table className="data-table">
                   <thead>
@@ -920,22 +1018,55 @@ export default function App() {
                           {column.label}
                         </th>
                       ))}
+                      <th scope="col" aria-label="Acties" />
                     </tr>
                   </thead>
-                  <tbody>
-                    {parsed.map((record, index) => (
-                      <tr key={`${record.bronapplicatie}-${record.doelapplicatie}-${index}`}>
-                        <td>{index + 1}</td>
-                        {TABLE_COLUMNS.map((column) => (
-                          <td key={column.key}>{record[column.key] || "-"}</td>
-                        ))}
-                      </tr>
-                    ))}
+                  <tbody ref={tableBodyRef}>
+                    {editedRows.map((record, index) => {
+                      const isHighlighted =
+                        selectedNodeId &&
+                        (record.bronapplicatie === selectedNodeId ||
+                          record.doelapplicatie === selectedNodeId);
+                      return (
+                        <tr
+                          key={index}
+                          className={isHighlighted ? "row-highlighted" : ""}
+                          onClick={() => handleRowClick(record)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <td>{index + 1}</td>
+                          {TABLE_COLUMNS.map((column) => (
+                            <td key={column.key}>
+                              <input
+                                className="table-cell-input"
+                                value={record[column.key] || ""}
+                                onChange={(e) => updateCell(index, column.key, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </td>
+                          ))}
+                          <td>
+                            <button
+                              type="button"
+                              className="row-delete-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteRow(index);
+                              }}
+                              aria-label="Verwijder rij"
+                              title="Verwijder rij"
+                            >
+                              ×
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p className="meta">Geen records om te tonen.</p>
+              <p className="meta">Geen records. Upload een bestand of voeg rijen toe.</p>
             )}
           </section>
         </div>
