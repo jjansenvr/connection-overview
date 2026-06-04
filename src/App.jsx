@@ -1051,34 +1051,45 @@ export default function App() {
                     />
                     <button
                       type="button"
+                      className="saved-action-btn compact"
                       onClick={renameActiveSavedFile}
                       disabled={!activeSavedFileId || !renameValue.trim()}
                     >
+                      <span className="saved-action-icon" aria-hidden="true">✎</span>
                       {t("rename")}
                     </button>
                   </div>
                   <div className="saved-actions">
-                    <button type="button" onClick={saveCurrentDataset}>{t("saveCurrent")}</button>
+                    <button type="button" className="saved-action-btn" onClick={saveCurrentDataset}>
+                      <span className="saved-action-icon" aria-hidden="true">＋</span>
+                      {t("saveCurrent")}
+                    </button>
                     <button
                       type="button"
+                      className="saved-action-btn"
                       onClick={deleteActiveSavedFile}
                       disabled={!activeSavedFileId}
                     >
+                      <span className="saved-action-icon" aria-hidden="true">×</span>
                       {t("delete")}
                     </button>
                   </div>
                   <div className="saved-actions">
                     <button
                       type="button"
+                      className="saved-action-btn"
                       onClick={exportSavedFiles}
                       disabled={!savedFiles.length}
                     >
+                      <span className="saved-action-icon" aria-hidden="true">↥</span>
                       {t("export")}
                     </button>
                     <button
                       type="button"
+                      className="saved-action-btn"
                       onClick={() => importInputRef.current?.click()}
                     >
+                      <span className="saved-action-icon" aria-hidden="true">↧</span>
                       {t("import")}
                     </button>
                     <input

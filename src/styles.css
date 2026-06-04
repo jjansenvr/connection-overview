@@ -309,11 +309,40 @@ body {
 
 .saved-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .saved-actions button {
   flex: 1;
+}
+
+.saved-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+}
+
+.saved-action-btn.compact {
+  flex: 0 0 auto;
+  min-width: fit-content;
+}
+
+.saved-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  color: var(--accent-color);
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 .quick-switch-row {
@@ -425,6 +454,7 @@ input[type="text"]:focus {
 
 .saved-rename-row {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
