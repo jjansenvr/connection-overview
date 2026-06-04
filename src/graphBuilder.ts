@@ -73,7 +73,7 @@ export async function applyElkLayout(nodes, edges) {
       layoutOptions: {
         "elk.algorithm": "layered",
         "elk.direction": "RIGHT",
-        "elk.layered.spacing.nodeNodeBetweenLayers": "80",
+        "elk.layered.spacing.nodeNodeBetweenLayers": "140",
         "elk.spacing.nodeNode": "50",
         "elk.padding": `[top=${GROUP_PADDING},left=${GROUP_PADDING},bottom=${GROUP_PADDING},right=${GROUP_PADDING}]`,
       },
