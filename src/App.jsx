@@ -819,6 +819,22 @@ export default function App() {
     });
   }, [edges, selectedCluster, filteredSets.visibleEdgeIds, t]);
 
+  const integrationLegendItems = useMemo(() => {
+    const legendMap = new Map();
+
+    edges.forEach((edge) => {
+      const solution = String(edge.data?.integrationSolution || "").trim() || t("unknown");
+      const color = edge.style?.stroke || "#334155";
+      if (!legendMap.has(solution)) {
+        legendMap.set(solution, color);
+      }
+    });
+
+    return Array.from(legendMap.entries())
+      .map(([solution, color]) => ({ solution, color }))
+      .sort((a, b) => a.solution.localeCompare(b.solution, messages.locale));
+  }, [edges, t, messages.locale]);
+
   const toggleHostingFilter = useCallback(
     (value) => {
       setSelectedHostings((previous) => {
@@ -1292,15 +1308,20 @@ export default function App() {
               <MiniMap pannable zoomable />
               <Panel position="top-right" className="legend">
                 <strong>{t("legend")}</strong>
-                <span>
-                  <i className="dot saas" /> SaaS
-                </span>
-                <span>
-                  <i className="dot onprem" /> On-premises
-                </span>
-                <span>
-                  <i className="dot unknown" /> {t("unknown")}
-                </span>
+                <span className="legend-subtitle">{t("integrationSolution")}</span>
+                {integrationLegendItems.length ? (
+                  integrationLegendItems.map((item) => (
+                    <span key={item.solution}>
+                      <i className="dot integration-dot" style={{ backgroundColor: item.color }} />
+                      {item.solution}
+                    </span>
+                  ))
+                ) : (
+                  <span>
+                    <i className="dot integration-dot" style={{ backgroundColor: "#334155" }} />
+                    {t("unknown")}
+                  </span>
+                )}
               </Panel>
             </ReactFlow>
           </section>

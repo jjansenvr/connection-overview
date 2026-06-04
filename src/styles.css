@@ -709,6 +709,14 @@ input[type="text"]:focus {
   color: var(--text-primary);
 }
 
+.legend-subtitle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
 .legend span {
   display: flex;
   align-items: center;
@@ -722,6 +730,10 @@ input[type="text"]:focus {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+}
+
+.dot.integration-dot {
+  border: 1px solid color-mix(in oklab, var(--text-primary) 20%, transparent);
 }
 
 .dot.saas {
