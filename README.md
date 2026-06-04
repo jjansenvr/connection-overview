@@ -49,16 +49,19 @@ De app verwacht records met deze velden (hoofdlettergevoeligheid maakt niet uit)
 - Brontype
 - Doeltype
 - Koppelingsoort
+- Integration solution
+- Bronopmerking
+- Doelopmerking
 
-De parser accepteert ook oudere Nederlandse kolomnamen en een aantal Engelse aliassen zoals `Source`, `Target` en `Connection type`.
+De parser accepteert ook oudere Nederlandse kolomnamen en een aantal Engelse aliassen zoals `Source`, `Target`, `Connection type`, `Integration type`, `Integration solution`, `Source remark` en `Target remark`.
 
 ### CSV voorbeeld
 
 ```csv
-Bronapplicatie,Doelapplicatie,Brontype,Doeltype,Koppelingsoort
-ERP,CRM,On premises,SaaS,API
-CRM,Datawarehouse,SaaS,On premises,Batch
-HRM,ERP,SaaS,On premises,Event
+Bronapplicatie,Doelapplicatie,Brontype,Doeltype,Koppelingsoort,Integration solution,Source remark,Target remark
+ERP,CRM,On premises,SaaS,API,Azure Integration Services,Master data owner,Consumes customer updates
+CRM,Datawarehouse,SaaS,On premises,Batch,SSIS,Nightly export,ETL landing
+HRM,ERP,SaaS,On premises,Event,Kafka,Employee created event,Creates supplier record
 ```
 
 ### YAML voorbeeld

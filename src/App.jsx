@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
   Background,
+  BaseEdge,
   Controls,
+  getBezierPath,
   Handle,
   MiniMap,
   Panel,
@@ -47,6 +49,7 @@ const TRANSLATIONS = {
     sourceRemarkField: "Bron opmerking: Bronopmerking, Source comment, Source remark",
     targetRemarkField: "Doel opmerking: Doelopmerking, Target comment, Target remark",
     connectionTypeField: "Koppelingsoort: Koppelingsoort, Soort koppeling, Connection type, Integration type",
+    integrationSolutionField: "Integratieoplossing: Integration solution, Integratie oplossing",
     format: "Formaat",
     savedFiles: "Opgeslagen bestanden",
     chooseSavedFile: "Kies een opgeslagen bestand",
@@ -87,6 +90,7 @@ const TRANSLATIONS = {
     targetType: "Doeltype",
     sourceRemark: "Bronopmerking",
     targetRemark: "Doelopmerking",
+    integrationSolution: "Integratieoplossing",
     importInvalidFile: "Ongeldig importbestand",
     importNoDatasets: "Geen bruikbare datasets gevonden",
     importFailed: "Import mislukt: controleer het JSON-bestand.",
@@ -126,6 +130,7 @@ const TRANSLATIONS = {
     sourceRemarkField: "Source remark: Bronopmerking, Source comment, Source remark",
     targetRemarkField: "Target remark: Doelopmerking, Target comment, Target remark",
     connectionTypeField: "Connection type: Koppelingsoort, Soort koppeling, Connection type, Integration type",
+    integrationSolutionField: "Integration solution: Integration solution, Integratie oplossing",
     format: "Format",
     savedFiles: "Saved files",
     chooseSavedFile: "Choose a saved file",
@@ -166,6 +171,7 @@ const TRANSLATIONS = {
     targetType: "Target type",
     sourceRemark: "Source remark",
     targetRemark: "Target remark",
+    integrationSolution: "Integration solution",
     importInvalidFile: "Invalid import file",
     importNoDatasets: "No usable datasets found",
     importFailed: "Import failed: check the JSON file.",
@@ -203,6 +209,7 @@ function getTableColumns(t) {
     { key: "bronHosting", label: t("sourceType") },
     { key: "doelHosting", label: t("targetType") },
     { key: "koppelingSoort", label: t("connectionType") },
+    { key: "integratieOplossing", label: t("integrationSolution") },
     { key: "bronOpmerking", label: t("sourceRemark") },
     { key: "doelOpmerking", label: t("targetRemark") }
   ];
@@ -220,12 +227,6 @@ function formatFromFileName(fileName, fallbackFormat = "yaml") {
 }
 
 function NodeLabel({ data }) {
-  const bronOpmerkingen = data.bronOpmerkingen || [];
-  const doelOpmerkingen = data.doelOpmerkingen || [];
-  const hasRemarks = bronOpmerkingen.length || doelOpmerkingen.length;
-  const sourceLabel = data.sourceLabel || "Source";
-  const targetLabel = data.targetLabel || "Target";
-
   return (
     <div className="node-label">
       <Handle type="target" position={Position.Left} />
@@ -237,26 +238,78 @@ function NodeLabel({ data }) {
           </div>
         ))}
       </div>
-      {hasRemarks ? (
-        <div className="node-remarks">
-          {bronOpmerkingen.map((opmerking) => (
-            <div key={`bron-${opmerking}`}>
-              <span className="remark-label">{sourceLabel}:</span> {opmerking}
-            </div>
-          ))}
-          {doelOpmerkingen.map((opmerking) => (
-            <div key={`doel-${opmerking}`}>
-              <span className="remark-label">{targetLabel}:</span> {opmerking}
-            </div>
-          ))}
-        </div>
-      ) : null}
       <Handle type="source" position={Position.Right} />
     </div>
   );
 }
 
+function RemarkEdge({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  markerEnd,
+  style,
+  label,
+  labelStyle,
+  labelBgStyle,
+  labelBgPadding,
+  labelBgBorderRadius,
+  data
+}) {
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition
+  });
+  const sourceLabel = data?.sourceLabel || "Source";
+  const targetLabel = data?.targetLabel || "Target";
+  const tooltipLines = [
+    `${sourceLabel}: ${data?.sourceRemark || "-"}`,
+    `${targetLabel}: ${data?.targetRemark || "-"}`
+  ];
+
+  if (data?.integrationSolution) {
+    tooltipLines.push(`Integration solution: ${data.integrationSolution}`);
+  }
+
+  return (
+    <>
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        markerEnd={markerEnd}
+        style={style}
+        label={label}
+        labelX={labelX}
+        labelY={labelY}
+        labelStyle={labelStyle}
+        labelShowBg
+        labelBgStyle={labelBgStyle}
+        labelBgPadding={labelBgPadding}
+        labelBgBorderRadius={labelBgBorderRadius}
+      />
+      <path
+        d={edgePath}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={24}
+        pointerEvents="stroke"
+      >
+        <title>{tooltipLines.join("\n")}</title>
+      </path>
+    </>
+  );
+}
+
 const nodeTypes = { appNode: NodeLabel };
+const edgeTypes = { remarkEdge: RemarkEdge };
 
 function useTheme() {
   const [theme, setTheme] = useState(() => {
@@ -734,6 +787,11 @@ export default function App() {
 
       return {
         ...edge,
+        data: {
+          ...edge.data,
+          sourceLabel: t("source"),
+          targetLabel: t("target")
+        },
         hidden: !isVisible,
         animated: isInFocus,
         style: {
@@ -751,7 +809,7 @@ export default function App() {
         }
       };
     });
-  }, [edges, selectedCluster, filteredSets.visibleEdgeIds]);
+  }, [edges, selectedCluster, filteredSets.visibleEdgeIds, t]);
 
   const toggleHostingFilter = useCallback(
     (value) => {
@@ -830,6 +888,7 @@ export default function App() {
         bronHosting: "",
         doelHosting: "",
         koppelingSoort: "",
+        integratieOplossing: "",
         bronOpmerking: "",
         doelOpmerking: ""
       }
@@ -997,6 +1056,7 @@ export default function App() {
                   <li>{t("sourceRemarkField")}</li>
                   <li>{t("targetRemarkField")}</li>
                   <li>{t("connectionTypeField")}</li>
+                  <li>{t("integrationSolutionField")}</li>
                 </ul>
               </div>
             ) : null}
@@ -1201,6 +1261,7 @@ export default function App() {
               nodes={displayNodes}
               edges={displayEdges}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               onInit={setReactFlowInstance}
               onNodeClick={handleNodeClick}
               onPaneClick={clearSelection}

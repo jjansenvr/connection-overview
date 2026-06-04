@@ -230,7 +230,13 @@ export function buildGraph(records, labels = DEFAULT_LABELS) {
       id: `${sourceName}-${targetName}-${index}`,
       source: sourceName,
       target: targetName,
+      type: "remarkEdge",
       label: record.koppelingSoort || resolvedLabels.connectionFallback,
+      data: {
+        sourceRemark: sourceOpmerking,
+        targetRemark: targetOpmerking,
+        integrationSolution: String(record.integratieOplossing || "").trim()
+      },
       markerEnd: {
         type: MarkerType.ArrowClosed
       },

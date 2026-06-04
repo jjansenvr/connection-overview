@@ -3,15 +3,24 @@
   bronapplicatie Saas of on premises: On premises
   Doelapplicatie Saas/on premises: SaaS
   Soort koppeling: API
+  Integration solution: Azure Integration Services
+  Source remark: Master data owner
+  Target remark: Consumes customer updates
 
 - Bronapplicatie: CRM
   Doelapplicatie: Datawarehouse
   bronapplicatie Saas of on premises: SaaS
   Doelapplicatie Saas/on premises: On premises
   Soort koppeling: Batch
+  Integration solution: SSIS
+  Source remark: Nightly export
+  Target remark: ETL landing
 
 - Bronapplicatie: HRM
   Doelapplicatie: ERP
   bronapplicatie Saas of on premises: SaaS
   Doelapplicatie Saas/on premises: On premises
   Soort koppeling: Event
+  Integration solution: Kafka
+  Source remark: Employee created event
+  Target remark: Creates supplier record

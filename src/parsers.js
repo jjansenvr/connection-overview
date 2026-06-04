@@ -79,6 +79,13 @@ export function mapRawRecord(rawRecord) {
       "Type",
       "Connection type",
       "Integration type"
+    ]),
+    integratieOplossing: getValueByAliases(rawRecord, [
+      "Integration solution",
+      "Integratie oplossing",
+      "Integratieoplossing",
+      "Integration platform",
+      "Middleware"
     ])
   };
 }
