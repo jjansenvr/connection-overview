@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Papa from "papaparse";
 import ReactFlow, {
   Background,
   BaseEdge,
@@ -524,6 +525,8 @@ export default function App() {
 
     setSavedFiles((previous) => previous.filter((file) => file.id !== activeSavedFileId));
     setActiveSavedFileId("");
+    setInput("");
+    setError("");
   }, [activeSavedFileId]);
 
   const renameActiveSavedFile = useCallback(() => {
@@ -617,6 +620,11 @@ export default function App() {
   }, [t]);
 
   const parsed = useMemo(() => {
+    if (!String(input || "").trim()) {
+      setError("");
+      return [];
+    }
+
     try {
       const rows = parseByFormat(input, format, {
         csvParseError: ({ row, message }) => t("csvParseError", { row, message }),
@@ -896,18 +904,22 @@ export default function App() {
   }, []);
 
   const downloadEditedCSV = useCallback(() => {
-    const headers = tableColumns.map((c) => c.label);
-    const escape = (val) => {
-      const s = String(val || "");
-      return s.includes(",") || s.includes('"') || s.includes("\n")
-        ? `"${s.replace(/"/g, '""')}"`
-        : s;
-    };
-    const lines = [
-      headers.join(","),
-      ...editedRows.map((row) => tableColumns.map((col) => escape(row[col.key])).join(","))
-    ];
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const fields = tableColumns.map((column) => column.label);
+    const data = editedRows.map((row) =>
+      tableColumns.map((column) => String(row[column.key] ?? ""))
+    );
+    const csv = Papa.unparse(
+      {
+        fields,
+        data
+      },
+      {
+        header: true,
+        skipEmptyLines: false
+      }
+    );
+
+    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -950,6 +962,9 @@ export default function App() {
   const onFileUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) {
+      setInput("");
+      setError("");
+      setActiveSavedFileId("");
       return;
     }
 

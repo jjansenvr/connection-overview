@@ -181,6 +181,35 @@ function nodeColorByHosting(hosting) {
   return "#475569";
 }
 
+const INTEGRATION_EDGE_PALETTE = [
+  "#0f766e",
+  "#0369a1",
+  "#7c3aed",
+  "#b45309",
+  "#be123c",
+  "#4d7c0f",
+  "#4338ca",
+  "#c2410c"
+];
+
+function hashString(value) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function edgeColorByIntegrationSolution(solution) {
+  const normalized = String(solution || "").trim();
+  if (!normalized) {
+    return "#334155";
+  }
+
+  const paletteIndex = hashString(normalized.toLowerCase()) % INTEGRATION_EDGE_PALETTE.length;
+  return INTEGRATION_EDGE_PALETTE[paletteIndex];
+}
+
 export function buildGraph(records, labels = DEFAULT_LABELS) {
   const nodeMap = new Map();
   const edges = [];
@@ -219,6 +248,8 @@ export function buildGraph(records, labels = DEFAULT_LABELS) {
 
     const sourceOpmerking = String(record.bronOpmerking || "").trim();
     const targetOpmerking = String(record.doelOpmerking || "").trim();
+    const integrationSolution = String(record.integratieOplossing || "").trim();
+    const edgeColor = edgeColorByIntegrationSolution(integrationSolution);
     if (sourceOpmerking) {
       sourceNode.bronOpmerkingen.add(sourceOpmerking);
     }
@@ -235,13 +266,14 @@ export function buildGraph(records, labels = DEFAULT_LABELS) {
       data: {
         sourceRemark: sourceOpmerking,
         targetRemark: targetOpmerking,
-        integrationSolution: String(record.integratieOplossing || "").trim()
+        integrationSolution
       },
       markerEnd: {
-        type: MarkerType.ArrowClosed
+        type: MarkerType.ArrowClosed,
+        color: edgeColor
       },
       style: {
-        stroke: "#334155",
+        stroke: edgeColor,
         strokeWidth: 1.6
       },
       labelStyle: {
