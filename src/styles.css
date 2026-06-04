@@ -332,7 +332,7 @@ body {
 
 .saved-action-btn.compact {
   flex: 0 0 auto;
-  min-width: fit-content;
+  max-width: 100%;
 }
 
 .saved-action-icon {
@@ -460,6 +460,11 @@ input[type="text"]:focus {
 
 .saved-rename-row input {
   flex: 1;
+  min-width: 0;
+}
+
+.saved-rename-row .saved-action-btn.compact {
+  white-space: nowrap;
 }
 
 .hidden-input {
@@ -755,5 +760,11 @@ input[type="text"]:focus {
 
   .saved-rename-row {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .saved-rename-row .saved-action-btn.compact {
+    width: 100%;
+    justify-content: center;
   }
 }
