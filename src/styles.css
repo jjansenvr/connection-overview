@@ -549,7 +549,7 @@ input[type="text"]:focus {
 }
 
 .flow-panel .integration-edge-glow {
-  filter: blur(4px);
+  filter: blur(1px);
 }
 
 .table-panel {

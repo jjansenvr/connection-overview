@@ -14,28 +14,40 @@ const GROUP_PADDING = 40;
 const elk = new ELK();
 
 /** Find connected components (undirected). Returns array of Set<id>. */
-function findComponents(ids, edges) {
-  const adj = new Map(ids.map((id) => [id, new Set()]));
+function findComponents(ids: string[], edges: Array<{ source: string; target: string }>) {
+  const adj = new Map<string, Set<string>>(
+    ids.map((id) => [id, new Set<string>()])
+  );
   edges.forEach(({ source, target }) => {
     if (adj.has(source) && adj.has(target)) {
-      adj.get(source).add(target);
-      adj.get(target).add(source);
+      const sourceNeighbors = adj.get(source);
+      const targetNeighbors = adj.get(target);
+      sourceNeighbors?.add(target);
+      targetNeighbors?.add(source);
     }
   });
 
-  const visited = new Set();
-  const components = [];
+  const visited = new Set<string>();
+  const components: Array<Set<string>> = [];
 
   ids.forEach((id) => {
     if (visited.has(id)) return;
-    const component = new Set();
-    const queue = [id];
+    const component = new Set<string>();
+    const queue: string[] = [id];
     while (queue.length) {
       const cur = queue.shift();
+      if (!cur) {
+        continue;
+      }
       if (visited.has(cur)) continue;
       visited.add(cur);
       component.add(cur);
-      adj.get(cur).forEach((nb) => { if (!visited.has(nb)) queue.push(nb); });
+      const neighbors = adj.get(cur);
+      neighbors?.forEach((nb) => {
+        if (!visited.has(nb)) {
+          queue.push(nb);
+        }
+      });
     }
     components.push(component);
   });

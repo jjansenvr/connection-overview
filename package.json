@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc --noEmit",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -17,7 +18,11 @@
     "reactflow": "^11.11.4"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.6.3",
     "vite": "^5.4.8"
   }
 }

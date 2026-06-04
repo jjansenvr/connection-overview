@@ -324,7 +324,7 @@ function RemarkEdge({
 }
 
 const nodeTypes = { appNode: NodeLabel };
-const edgeTypes = { remarkEdge: RemarkEdge };
+const edgeTypes: any = { remarkEdge: RemarkEdge };
 
 function useTheme() {
   const [theme, setTheme] = useState(() => {
@@ -380,7 +380,7 @@ export default function App() {
   const [format, setFormat] = useState("yaml");
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
-  const [savedFiles, setSavedFiles] = useState([]);
+  const [savedFiles, setSavedFiles] = useState<any[]>([]);
   const [activeSavedFileId, setActiveSavedFileId] = useState(() => {
     try {
       return localStorage.getItem(ACTIVE_SAVED_FILE_STORAGE_KEY) || "";
@@ -393,18 +393,18 @@ export default function App() {
   const [isUploadCollapsed, setIsUploadCollapsed] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [dragEnabled, setDragEnabled] = useState(true);
-  const [selectedNodeId, setSelectedNodeId] = useState(null);
-  const [reactFlowInstance, setReactFlowInstance] = useState(null);
-  const [selectedHostings, setSelectedHostings] = useState(null);
-  const [selectedConnectionTypes, setSelectedConnectionTypes] = useState(null);
-  const [selectedIntegrationSolutions, setSelectedIntegrationSolutions] = useState(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
+  const [selectedHostings, setSelectedHostings] = useState<string[] | null>(null);
+  const [selectedConnectionTypes, setSelectedConnectionTypes] = useState<string[] | null>(null);
+  const [selectedIntegrationSolutions, setSelectedIntegrationSolutions] = useState<string[] | null>(null);
   const importInputRef = useRef(null);
   const tableBodyRef = useRef(null);
-  const [editedRows, setEditedRows] = useState([]);
+  const [editedRows, setEditedRows] = useState<any[]>([]);
   const { theme, toggle: toggleTheme } = useTheme();
   const messages = TRANSLATIONS[language] || TRANSLATIONS.en;
   const t = useCallback(
-    (key, values) => interpolate(messages[key] ?? TRANSLATIONS.en[key] ?? key, values),
+    (key, values = {}) => interpolate(messages[key] ?? TRANSLATIONS.en[key] ?? key, values),
     [messages]
   );
   const tableColumns = useMemo(() => getTableColumns(t), [t]);
@@ -668,20 +668,20 @@ export default function App() {
   );
 
   const hostingOptions = useMemo(() => {
-    const options = new Set();
+    const options = new Set<string>();
     graph.nodes.forEach((node) => {
-      (node.data?.types || []).forEach((type) => options.add(type));
+      (node.data?.types || []).forEach((type) => options.add(String(type)));
     });
     return Array.from(options).sort((a, b) => a.localeCompare(b));
   }, [graph.nodes]);
 
   const connectionTypeOptions = useMemo(() => {
-    const options = new Set(graph.edges.map((edge) => edge.label));
+    const options = new Set<string>(graph.edges.map((edge) => String(edge.label || "")));
     return Array.from(options).sort((a, b) => a.localeCompare(b));
   }, [graph.edges]);
 
   const integrationSolutionOptions = useMemo(() => {
-    const options = new Set(
+    const options = new Set<string>(
       graph.edges.map((edge) => String(edge.data?.integrationSolution || "").trim() || t("unknown"))
     );
     return Array.from(options).sort((a, b) => a.localeCompare(b, messages.locale));
@@ -727,7 +727,7 @@ export default function App() {
 
     const visibleEdgeIds = new Set();
     edges.forEach((edge) => {
-      const matchesConnectionType = activeConnectionTypesSet.has(edge.label);
+      const matchesConnectionType = activeConnectionTypesSet.has(String(edge.label || ""));
       const solution = String(edge.data?.integrationSolution || "").trim() || t("unknown");
       const matchesIntegrationSolution = activeIntegrationSolutionsSet.has(solution);
       const endpointsVisible =
