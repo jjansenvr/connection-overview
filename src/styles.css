@@ -141,7 +141,7 @@ body {
   color: var(--text-secondary);
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -222,7 +222,7 @@ body {
   cursor: pointer;
   background-color: var(--accent-color);
   color: #1a1a1a;
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 7px 12px;
   font-weight: 600;
   font-size: 0.85rem;
@@ -246,7 +246,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 16px;
   line-height: 1;
 }
@@ -326,7 +326,7 @@ body {
   padding: 6px 10px;
   font-size: 0.82rem;
   font-weight: 600;
-  border-radius: 999px;
+  border-radius: 6px;
   background: var(--bg-tertiary);
 }
 
@@ -353,7 +353,7 @@ body {
 
 .quick-file-btn {
   max-width: 100%;
-  border-radius: 999px;
+  border-radius: 6px;
   padding: 4px 10px;
   font-size: 0.78rem;
   white-space: nowrap;
@@ -409,7 +409,7 @@ input {
 select,
 button {
   border: 1px solid var(--border-dim);
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 7px 10px;
   background-color: var(--input-bg);
   color: var(--text-primary);
