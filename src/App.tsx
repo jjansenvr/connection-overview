@@ -20,6 +20,16 @@ import { parseByFormat } from "./parsers";
 const SAVED_FILES_STORAGE_KEY = "connection-overview.saved-files.v1";
 const ACTIVE_SAVED_FILE_STORAGE_KEY = "connection-overview.active-file-id.v1";
 const LANGUAGE_STORAGE_KEY = "connection-overview.language.v1";
+const TABLE_ROW_KEYS = [
+  "bronapplicatie",
+  "doelapplicatie",
+  "bronHosting",
+  "doelHosting",
+  "koppelingSoort",
+  "integratieOplossing",
+  "bronOpmerking",
+  "doelOpmerking"
+];
 
 const TRANSLATIONS = {
   nl: {
@@ -239,6 +249,26 @@ function formatFromFileName(fileName, fallbackFormat = "yaml") {
     return "yaml";
   }
   return fallbackFormat;
+}
+
+function serializeRowsByFormat(rows, format) {
+  const normalizedRows = (rows || []).map((row) => {
+    const normalized = {};
+    TABLE_ROW_KEYS.forEach((key) => {
+      normalized[key] = String(row?.[key] ?? "");
+    });
+    return normalized;
+  });
+
+  if (format === "csv") {
+    return Papa.unparse(normalizedRows, {
+      header: true,
+      columns: TABLE_ROW_KEYS,
+      skipEmptyLines: false
+    });
+  }
+
+  return JSON.stringify(normalizedRows, null, 2);
 }
 
 function NodeLabel({ data }) {
@@ -524,8 +554,37 @@ export default function App() {
     setActiveSavedFileId(entry.id);
   }, []);
 
+  const persistEditedRowsForFile = useCallback(
+    (fileId, rows, nextFormat = format) => {
+      if (!fileId) {
+        return;
+      }
+
+      const serialized = serializeRowsByFormat(rows, nextFormat);
+      setSavedFiles((previous) =>
+        previous
+          .map((file) =>
+            file.id === fileId
+              ? {
+                  ...file,
+                  format: nextFormat,
+                  input: serialized,
+                  updatedAt: Date.now()
+                }
+              : file
+          )
+          .sort((a, b) => b.updatedAt - a.updatedAt)
+      );
+    },
+    [format]
+  );
+
   const loadSavedFile = useCallback(
     (fileId) => {
+      if (activeSavedFileId && activeSavedFileId !== fileId) {
+        persistEditedRowsForFile(activeSavedFileId, editedRows, format);
+      }
+
       setActiveSavedFileId(fileId);
       const selectedFile = savedFiles.find((file) => file.id === fileId);
       if (!selectedFile) {
@@ -536,7 +595,7 @@ export default function App() {
       setInput(selectedFile.input);
       setError("");
     },
-    [savedFiles]
+    [activeSavedFileId, editedRows, format, persistEditedRowsForFile, savedFiles]
   );
 
   const saveCurrentDataset = useCallback(() => {
@@ -545,12 +604,12 @@ export default function App() {
       id: `manual-${Date.now()}`,
       name: datasetName,
       format,
-      input,
+      input: serializeRowsByFormat(editedRows, format),
       updatedAt: Date.now()
     };
 
     upsertSavedFile(entry);
-  }, [format, input, upsertSavedFile, t, messages.locale]);
+  }, [editedRows, format, upsertSavedFile, t, messages.locale]);
 
   const deleteActiveSavedFile = useCallback(() => {
     if (!activeSavedFileId) {
@@ -974,29 +1033,38 @@ export default function App() {
     setEditedRows((prev) => {
       const next = [...prev];
       next[rowIndex] = { ...next[rowIndex], [key]: value };
+      persistEditedRowsForFile(activeSavedFileId, next, format);
       return next;
     });
-  }, []);
+  }, [activeSavedFileId, format, persistEditedRowsForFile]);
 
   const deleteRow = useCallback((rowIndex) => {
-    setEditedRows((prev) => prev.filter((_, i) => i !== rowIndex));
-  }, []);
+    setEditedRows((prev) => {
+      const next = prev.filter((_, i) => i !== rowIndex);
+      persistEditedRowsForFile(activeSavedFileId, next, format);
+      return next;
+    });
+  }, [activeSavedFileId, format, persistEditedRowsForFile]);
 
   const addRow = useCallback(() => {
-    setEditedRows((prev) => [
-      ...prev,
-      {
-        bronapplicatie: "",
-        doelapplicatie: "",
-        bronHosting: "",
-        doelHosting: "",
-        koppelingSoort: "",
-        integratieOplossing: "",
-        bronOpmerking: "",
-        doelOpmerking: ""
-      }
-    ]);
-  }, []);
+    setEditedRows((prev) => {
+      const next = [
+        ...prev,
+        {
+          bronapplicatie: "",
+          doelapplicatie: "",
+          bronHosting: "",
+          doelHosting: "",
+          koppelingSoort: "",
+          integratieOplossing: "",
+          bronOpmerking: "",
+          doelOpmerking: ""
+        }
+      ];
+      persistEditedRowsForFile(activeSavedFileId, next, format);
+      return next;
+    });
+  }, [activeSavedFileId, format, persistEditedRowsForFile]);
 
   const downloadEditedCSV = useCallback(() => {
     const fields = tableColumns.map((column) => column.label);
