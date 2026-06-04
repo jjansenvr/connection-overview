@@ -8,6 +8,7 @@ Visualiseer applicatiekoppelingen met React Flow op basis van CSV of YAML data.
 - Automatische parsing naar bron/doel-relaties.
 - React Flow visualisatie met nodes, pijlen en labels voor type koppeling.
 - Hosting-indicatie per applicatie (SaaS / On-premises / Unknown).
+- Meertalige interface met Nederlands en Engels via de taalkeuze in de header.
 
 ## Starten
 

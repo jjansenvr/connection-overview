@@ -2,8 +2,10 @@ import { MarkerType } from "reactflow";
 
 import ELK from "elkjs/lib/elk.bundled";
 
-const HOSTING_FALLBACK = "Unknown";
-const CONNECTION_FALLBACK = "Onbekend";
+const DEFAULT_LABELS = {
+  hostingFallback: "Unknown",
+  connectionFallback: "Unknown"
+};
 
 const NODE_WIDTH = 230;
 const NODE_HEIGHT = 80;
@@ -149,10 +151,10 @@ export async function applyElkLayout(nodes, edges) {
   return { nodes: [...groupNodes, ...laidNodes], edges };
 }
 
-function normalizeHosting(raw) {
+function normalizeHosting(raw, labels) {
   const value = String(raw || "").trim();
   if (!value) {
-    return HOSTING_FALLBACK;
+    return labels.hostingFallback;
   }
 
   const cleaned = value.toLowerCase();
@@ -179,9 +181,10 @@ function nodeColorByHosting(hosting) {
   return "#475569";
 }
 
-export function buildGraph(records) {
+export function buildGraph(records, labels = DEFAULT_LABELS) {
   const nodeMap = new Map();
   const edges = [];
+  const resolvedLabels = { ...DEFAULT_LABELS, ...labels };
 
   function ensureNode(name) {
     if (!nodeMap.has(name)) {
@@ -208,11 +211,11 @@ export function buildGraph(records) {
     const sourceNode = ensureNode(sourceName);
     const targetNode = ensureNode(targetName);
 
-    const sourceHosting = normalizeHosting(record.bronHosting);
-    const targetHosting = normalizeHosting(record.doelHosting);
+    const sourceHosting = normalizeHosting(record.bronHosting, resolvedLabels);
+    const targetHosting = normalizeHosting(record.doelHosting, resolvedLabels);
 
-    sourceNode.types.add(sourceHosting || HOSTING_FALLBACK);
-    targetNode.types.add(targetHosting || HOSTING_FALLBACK);
+    sourceNode.types.add(sourceHosting || resolvedLabels.hostingFallback);
+    targetNode.types.add(targetHosting || resolvedLabels.hostingFallback);
 
     const sourceOpmerking = String(record.bronOpmerking || "").trim();
     const targetOpmerking = String(record.doelOpmerking || "").trim();
@@ -227,7 +230,7 @@ export function buildGraph(records) {
       id: `${sourceName}-${targetName}-${index}`,
       source: sourceName,
       target: targetName,
-      label: record.koppelingSoort || CONNECTION_FALLBACK,
+      label: record.koppelingSoort || resolvedLabels.connectionFallback,
       markerEnd: {
         type: MarkerType.ArrowClosed
       },
@@ -251,7 +254,7 @@ export function buildGraph(records) {
     const types = Array.from(node.types);
     const bronOpmerkingen = Array.from(node.bronOpmerkingen);
     const doelOpmerkingen = Array.from(node.doelOpmerkingen);
-    const primaryType = types[0] || HOSTING_FALLBACK;
+    const primaryType = types[0] || resolvedLabels.hostingFallback;
 
     return {
       id: node.id,

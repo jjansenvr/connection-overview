@@ -1,6 +1,12 @@
 import Papa from "papaparse";
 import yaml from "js-yaml";
 
+const DEFAULT_MESSAGES = {
+  csvParseError: ({ row, message }) => `CSV parse error on row ${row}: ${message}`,
+  yamlExpectedList: "YAML should contain a list of records.",
+  unsupportedFormat: (format) => `Unsupported format: ${format}`
+};
+
 function normalizeKey(key) {
   return String(key || "")
     .toLowerCase()
@@ -77,7 +83,7 @@ export function mapRawRecord(rawRecord) {
   };
 }
 
-export function parseCsv(text) {
+export function parseCsv(text, messages = DEFAULT_MESSAGES) {
   const result = Papa.parse(text, {
     header: true,
     skipEmptyLines: true,
@@ -86,30 +92,35 @@ export function parseCsv(text) {
 
   if (result.errors?.length) {
     const first = result.errors[0];
-    throw new Error(`CSV parse error on row ${first.row ?? "?"}: ${first.message}`);
+    throw new Error(
+      messages.csvParseError({
+        row: first.row ?? "?",
+        message: first.message
+      })
+    );
   }
 
   return result.data.map(mapRawRecord);
 }
 
-export function parseYaml(text) {
+export function parseYaml(text, messages = DEFAULT_MESSAGES) {
   const data = yaml.load(text);
 
   if (!Array.isArray(data)) {
-    throw new Error("YAML should contain a list of records.");
+    throw new Error(messages.yamlExpectedList);
   }
 
   return data.map(mapRawRecord);
 }
 
-export function parseByFormat(text, format) {
+export function parseByFormat(text, format, messages = DEFAULT_MESSAGES) {
   if (format === "csv") {
-    return parseCsv(text);
+    return parseCsv(text, messages);
   }
 
   if (format === "yaml") {
-    return parseYaml(text);
+    return parseYaml(text, messages);
   }
 
-  throw new Error(`Unsupported format: ${format}`);
+  throw new Error(messages.unsupportedFormat(format));
 }

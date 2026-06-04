@@ -119,6 +119,22 @@ body {
   gap: 8px;
 }
 
+.language-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.language-select span {
+  color: var(--text-secondary);
+}
+
+.language-select select {
+  min-width: 120px;
+}
+
 .icon-btn {
   background: transparent;
   border: none;

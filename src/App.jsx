@@ -16,16 +16,197 @@ import { parseByFormat } from "./parsers";
 
 const SAVED_FILES_STORAGE_KEY = "connection-overview.saved-files.v1";
 const ACTIVE_SAVED_FILE_STORAGE_KEY = "connection-overview.active-file-id.v1";
+const LANGUAGE_STORAGE_KEY = "connection-overview.language.v1";
 
-const TABLE_COLUMNS = [
-  { key: "bronapplicatie", label: "Bronapplicatie" },
-  { key: "doelapplicatie", label: "Doelapplicatie" },
-  { key: "bronHosting", label: "Brontype" },
-  { key: "doelHosting", label: "Doeltype" },
-  { key: "koppelingSoort", label: "Koppelingsoort" },
-  { key: "bronOpmerking", label: "Bronopmerking" },
-  { key: "doelOpmerking", label: "Doelopmerking" }
-];
+const TRANSLATIONS = {
+  nl: {
+    languageName: "Nederlands",
+    locale: "nl-NL",
+    datasetPrefix: "Dataset",
+    unnamedFile: "Naamloos bestand",
+    titleTagline: "Visualiseer applicatiekoppelingen uit CSV of YAML met React Flow.",
+    switchMode: "Schakel naar {mode} modus",
+    lightMode: "lichte",
+    darkMode: "donkere",
+    languageLabel: "Taal",
+    dataInput: "Data Input",
+    chooseFile: "Bestand kiezen",
+    closeInputHelp: "Sluit invoerhulp",
+    openInputHelp: "Open invoerhulp",
+    openInputPanel: "Open invoerpaneel",
+    closeInputPanel: "Sluit invoerpaneel",
+    inputHelpAria: "Invoerhulp",
+    inputFileOptions: "Input bestand opties",
+    supportedFormats: "Ondersteund: CSV, YAML (.yaml, .yml). Gebruik 1 record per regel/object.",
+    minimumRequired: "Minimaal benodigd",
+    optionalFields: "Optionele velden",
+    sourceApplicationField: "Bronapplicatie (of Source, Source Application, From)",
+    targetApplicationField: "Doelapplicatie (of Target, Target Application, To)",
+    sourceTypeField: "Bron type: Brontype, Bron type, Source hosting",
+    targetTypeField: "Doel type: Doeltype, Doel type, Target hosting",
+    sourceRemarkField: "Bron opmerking: Bronopmerking, Source comment, Source remark",
+    targetRemarkField: "Doel opmerking: Doelopmerking, Target comment, Target remark",
+    connectionTypeField: "Koppelingsoort: Koppelingsoort, Soort koppeling, Connection type, Integration type",
+    format: "Formaat",
+    savedFiles: "Opgeslagen bestanden",
+    chooseSavedFile: "Kies een opgeslagen bestand",
+    quickDatasetSwitch: "Snel wisselen van datasets",
+    loadFileTitle: "Laad {name}",
+    renamePlaceholder: "Nieuwe naam voor selectie",
+    rename: "Hernoem",
+    saveCurrent: "Opslaan huidige",
+    delete: "Verwijder",
+    export: "Exporteer",
+    import: "Importeer",
+    browserSavedHint: "Geuploade bestanden worden automatisch opgeslagen in je browser.",
+    dragNodes: "Nodes verslepen",
+    focusHint: "Klik op een node om verbonden onderdelen te focussen.",
+    recordsCount: "Records: {count}",
+    collapsedPanelHint: "Paneel ingeklapt. Gebruik \"Bestand kiezen\" of klik hieronder om te wisselen.",
+    filters: "Filters",
+    reset: "Reset",
+    hosting: "Hosting",
+    connectionType: "Koppelingsoort",
+    visibleSummary: "Zichtbaar: {appsVisible}/{appsTotal} applicaties, {edgesVisible}/{edgesTotal} koppelingen",
+    legend: "Legenda",
+    unknown: "Onbekend",
+    tableView: "Tabelweergave",
+    tableAriaLabel: "Tabelweergave van ingevoerde records",
+    addRowTitle: "Voeg een lege rij toe",
+    addRow: "+ Rij",
+    downloadCsvTitle: "Download als CSV",
+    rowsCount: "Rijen: {count}",
+    actions: "Acties",
+    deleteRow: "Verwijder rij",
+    noRecords: "Geen records. Upload een bestand of voeg rijen toe.",
+    source: "Bron",
+    target: "Doel",
+    sourceApplication: "Bronapplicatie",
+    targetApplication: "Doelapplicatie",
+    sourceType: "Brontype",
+    targetType: "Doeltype",
+    sourceRemark: "Bronopmerking",
+    targetRemark: "Doelopmerking",
+    importInvalidFile: "Ongeldig importbestand",
+    importNoDatasets: "Geen bruikbare datasets gevonden",
+    importFailed: "Import mislukt: controleer het JSON-bestand.",
+    failedToParseData: "Data kon niet worden ingelezen.",
+    csvParseError: "CSV parsefout op rij {row}: {message}",
+    yamlListError: "YAML moet een lijst met records bevatten.",
+    unsupportedFormat: "Niet-ondersteund formaat: {format}",
+    exportFileName: "export",
+    hostingFallback: "Onbekend",
+    connectionFallback: "Onbekend"
+  },
+  en: {
+    languageName: "English",
+    locale: "en-US",
+    datasetPrefix: "Dataset",
+    unnamedFile: "Untitled file",
+    titleTagline: "Visualize application connections from CSV or YAML with React Flow.",
+    switchMode: "Switch to {mode} mode",
+    lightMode: "light",
+    darkMode: "dark",
+    languageLabel: "Language",
+    dataInput: "Data Input",
+    chooseFile: "Choose file",
+    closeInputHelp: "Close input help",
+    openInputHelp: "Open input help",
+    openInputPanel: "Open input panel",
+    closeInputPanel: "Close input panel",
+    inputHelpAria: "Input help",
+    inputFileOptions: "Input file options",
+    supportedFormats: "Supported: CSV, YAML (.yaml, .yml). Use 1 record per line/object.",
+    minimumRequired: "Minimum required",
+    optionalFields: "Optional fields",
+    sourceApplicationField: "Source application (or Source, Source Application, From)",
+    targetApplicationField: "Target application (or Target, Target Application, To)",
+    sourceTypeField: "Source type: Brontype, Bron type, Source hosting",
+    targetTypeField: "Target type: Doeltype, Doel type, Target hosting",
+    sourceRemarkField: "Source remark: Bronopmerking, Source comment, Source remark",
+    targetRemarkField: "Target remark: Doelopmerking, Target comment, Target remark",
+    connectionTypeField: "Connection type: Koppelingsoort, Soort koppeling, Connection type, Integration type",
+    format: "Format",
+    savedFiles: "Saved files",
+    chooseSavedFile: "Choose a saved file",
+    quickDatasetSwitch: "Quick dataset switch",
+    loadFileTitle: "Load {name}",
+    renamePlaceholder: "New name for selection",
+    rename: "Rename",
+    saveCurrent: "Save current",
+    delete: "Delete",
+    export: "Export",
+    import: "Import",
+    browserSavedHint: "Uploaded files are automatically saved in your browser.",
+    dragNodes: "Drag nodes",
+    focusHint: "Click a node to focus connected parts.",
+    recordsCount: "Records: {count}",
+    collapsedPanelHint: "Panel collapsed. Use \"Choose file\" or click below to switch.",
+    filters: "Filters",
+    reset: "Reset",
+    hosting: "Hosting",
+    connectionType: "Connection type",
+    visibleSummary: "Visible: {appsVisible}/{appsTotal} applications, {edgesVisible}/{edgesTotal} connections",
+    legend: "Legend",
+    unknown: "Unknown",
+    tableView: "Table View",
+    tableAriaLabel: "Table view of imported records",
+    addRowTitle: "Add an empty row",
+    addRow: "+ Row",
+    downloadCsvTitle: "Download as CSV",
+    rowsCount: "Rows: {count}",
+    actions: "Actions",
+    deleteRow: "Delete row",
+    noRecords: "No records. Upload a file or add rows.",
+    source: "Source",
+    target: "Target",
+    sourceApplication: "Source application",
+    targetApplication: "Target application",
+    sourceType: "Source type",
+    targetType: "Target type",
+    sourceRemark: "Source remark",
+    targetRemark: "Target remark",
+    importInvalidFile: "Invalid import file",
+    importNoDatasets: "No usable datasets found",
+    importFailed: "Import failed: check the JSON file.",
+    failedToParseData: "Failed to parse data.",
+    csvParseError: "CSV parse error on row {row}: {message}",
+    yamlListError: "YAML should contain a list of records.",
+    unsupportedFormat: "Unsupported format: {format}",
+    exportFileName: "export",
+    hostingFallback: "Unknown",
+    connectionFallback: "Unknown"
+  }
+};
+
+function getInitialLanguage() {
+  try {
+    const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (saved && TRANSLATIONS[saved]) {
+      return saved;
+    }
+  } catch {
+    return "en";
+  }
+
+  return navigator.language?.toLowerCase().startsWith("nl") ? "nl" : "en";
+}
+
+function interpolate(template, values = {}) {
+  return String(template).replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
+}
+
+function getTableColumns(t) {
+  return [
+    { key: "bronapplicatie", label: t("sourceApplication") },
+    { key: "doelapplicatie", label: t("targetApplication") },
+    { key: "bronHosting", label: t("sourceType") },
+    { key: "doelHosting", label: t("targetType") },
+    { key: "koppelingSoort", label: t("connectionType") },
+    { key: "bronOpmerking", label: t("sourceRemark") },
+    { key: "doelOpmerking", label: t("targetRemark") }
+  ];
+}
 
 function formatFromFileName(fileName, fallbackFormat = "yaml") {
   const lower = String(fileName || "").toLowerCase();
@@ -42,6 +223,8 @@ function NodeLabel({ data }) {
   const bronOpmerkingen = data.bronOpmerkingen || [];
   const doelOpmerkingen = data.doelOpmerkingen || [];
   const hasRemarks = bronOpmerkingen.length || doelOpmerkingen.length;
+  const sourceLabel = data.sourceLabel || "Source";
+  const targetLabel = data.targetLabel || "Target";
 
   return (
     <div className="node-label">
@@ -58,12 +241,12 @@ function NodeLabel({ data }) {
         <div className="node-remarks">
           {bronOpmerkingen.map((opmerking) => (
             <div key={`bron-${opmerking}`}>
-              <span className="remark-label">Bron:</span> {opmerking}
+              <span className="remark-label">{sourceLabel}:</span> {opmerking}
             </div>
           ))}
           {doelOpmerkingen.map((opmerking) => (
             <div key={`doel-${opmerking}`}>
-              <span className="remark-label">Doel:</span> {opmerking}
+              <span className="remark-label">{targetLabel}:</span> {opmerking}
             </div>
           ))}
         </div>
@@ -125,6 +308,7 @@ function getConnectedNodeIds(startId, edges) {
 }
 
 export default function App() {
+  const [language, setLanguage] = useState(getInitialLanguage);
   const [format, setFormat] = useState("yaml");
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -149,6 +333,16 @@ export default function App() {
   const tableBodyRef = useRef(null);
   const [editedRows, setEditedRows] = useState([]);
   const { theme, toggle: toggleTheme } = useTheme();
+  const messages = TRANSLATIONS[language] || TRANSLATIONS.en;
+  const t = useCallback(
+    (key, values) => interpolate(messages[key] ?? TRANSLATIONS.en[key] ?? key, values),
+    [messages]
+  );
+  const tableColumns = useMemo(() => getTableColumns(t), [t]);
+
+  useEffect(() => {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  }, [language]);
 
   useEffect(() => {
     try {
@@ -258,7 +452,7 @@ export default function App() {
   );
 
   const saveCurrentDataset = useCallback(() => {
-    const datasetName = `Dataset ${new Date().toLocaleString("nl-NL")}`;
+    const datasetName = `${t("datasetPrefix")} ${new Date().toLocaleString(messages.locale)}`;
     const entry = {
       id: `manual-${Date.now()}`,
       name: datasetName,
@@ -268,7 +462,7 @@ export default function App() {
     };
 
     upsertSavedFile(entry);
-  }, [format, input, upsertSavedFile]);
+  }, [format, input, upsertSavedFile, t, messages.locale]);
 
   const deleteActiveSavedFile = useCallback(() => {
     if (!activeSavedFileId) {
@@ -333,13 +527,13 @@ export default function App() {
             : null;
 
         if (!incoming) {
-          throw new Error("Ongeldig importbestand");
+          throw new Error(t("importInvalidFile"));
         }
 
         const normalized = incoming
           .map((entry) => ({
             id: String(entry.id || `import-${Date.now()}-${Math.random().toString(36).slice(2)}`),
-            name: String(entry.name || "Naamloos bestand"),
+            name: String(entry.name || t("unnamedFile")),
             format: entry.format === "csv" ? "csv" : "yaml",
             input: String(entry.input || ""),
             updatedAt: Number(entry.updatedAt) || Date.now()
@@ -347,7 +541,7 @@ export default function App() {
           .filter((entry) => entry.input);
 
         if (!normalized.length) {
-          throw new Error("Geen bruikbare datasets gevonden");
+          throw new Error(t("importNoDatasets"));
         }
 
         setSavedFiles((previous) => {
@@ -359,32 +553,43 @@ export default function App() {
         });
 
         setError("");
-      } catch {
-        setError("Import mislukt: controleer het JSON-bestand.");
+      } catch (err) {
+        setError(err.message || t("importFailed"));
       } finally {
         event.target.value = "";
       }
     };
 
     reader.readAsText(file);
-  }, []);
+  }, [t]);
 
   const parsed = useMemo(() => {
     try {
-      const rows = parseByFormat(input, format);
+      const rows = parseByFormat(input, format, {
+        csvParseError: ({ row, message }) => t("csvParseError", { row, message }),
+        yamlExpectedList: t("yamlListError"),
+        unsupportedFormat: (nextFormat) => t("unsupportedFormat", { format: nextFormat })
+      });
       setError("");
       return rows;
     } catch (err) {
-      setError(err.message || "Failed to parse data.");
+      setError(err.message || t("failedToParseData"));
       return [];
     }
-  }, [input, format]);
+  }, [input, format, t]);
 
   useEffect(() => {
     setEditedRows(parsed);
   }, [parsed]);
 
-  const graph = useMemo(() => buildGraph(editedRows), [editedRows]);
+  const graph = useMemo(
+    () =>
+      buildGraph(editedRows, {
+        hostingFallback: t("hostingFallback"),
+        connectionFallback: t("connectionFallback")
+      }),
+    [editedRows, t]
+  );
 
   const hostingOptions = useMemo(() => {
     const options = new Set();
@@ -504,6 +709,13 @@ export default function App() {
 
       return {
         ...node,
+        data: isAppNode
+          ? {
+              ...node.data,
+              sourceLabel: t("source"),
+              targetLabel: t("target")
+            }
+          : node.data,
         hidden: !isVisible,
         style: {
           ...node.style,
@@ -512,7 +724,7 @@ export default function App() {
         }
       };
     });
-  }, [nodes, selectedCluster, selectedNodeId, filteredSets.visibleAppIds, filteredSets.visibleGroupIds]);
+  }, [nodes, selectedCluster, selectedNodeId, filteredSets.visibleAppIds, filteredSets.visibleGroupIds, t]);
 
   const displayEdges = useMemo(() => {
     return edges.map((edge) => {
@@ -625,7 +837,7 @@ export default function App() {
   }, []);
 
   const downloadEditedCSV = useCallback(() => {
-    const headers = TABLE_COLUMNS.map((c) => c.label);
+    const headers = tableColumns.map((c) => c.label);
     const escape = (val) => {
       const s = String(val || "");
       return s.includes(",") || s.includes('"') || s.includes("\n")
@@ -634,18 +846,18 @@ export default function App() {
     };
     const lines = [
       headers.join(","),
-      ...editedRows.map((row) => TABLE_COLUMNS.map((col) => escape(row[col.key])).join(","))
+      ...editedRows.map((row) => tableColumns.map((col) => escape(row[col.key])).join(","))
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${(activeSavedFile?.name || "export").replace(/\.[^.]+$/, "")}.csv`;
+    anchor.download = `${(activeSavedFile?.name || t("exportFileName")).replace(/\.[^.]+$/, "")}.csv`;
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
-  }, [editedRows, activeSavedFile]);
+  }, [tableColumns, editedRows, activeSavedFile, t]);
 
   const handleRowClick = useCallback(
     (record) => {
@@ -702,15 +914,29 @@ export default function App() {
       <header className="topbar">
         <div className="topbar-brand">
           <h1><span className="brand-accent">Connection</span>Overview</h1>
-          <p>Visualiseer applicatiekoppelingen uit CSV of YAML met React Flow.</p>
+          <p>{t("titleTagline")}</p>
         </div>
         <div className="topbar-actions">
+          <label className="language-select">
+            <span>{t("languageLabel")}</span>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+              {Object.entries(TRANSLATIONS).map(([code, translation]) => (
+                <option key={code} value={code}>
+                  {translation.languageName}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="button"
             className="icon-btn"
             onClick={toggleTheme}
-            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            aria-label={t("switchMode", {
+              mode: theme === "dark" ? t("lightMode") : t("darkMode")
+            })}
+            title={t("switchMode", {
+              mode: theme === "dark" ? t("lightMode") : t("darkMode")
+            })}
           >
             {theme === "dark" ? "☀︎" : "☾"}
           </button>
@@ -721,10 +947,10 @@ export default function App() {
         <div className="left-column">
           <section className={`panel left-panel ${isUploadCollapsed ? "collapsed" : ""}`}>
             <div className="panel-header">
-              <h2>Data Input</h2>
+              <h2>{t("dataInput")}</h2>
               <div className="panel-header-actions">
                 <label className="file-btn">
-                  Bestand kiezen
+                  {t("chooseFile")}
                   <input
                     type="file"
                     accept=".csv,.yaml,.yml,text/csv"
@@ -738,8 +964,8 @@ export default function App() {
                   type="button"
                   className="collapse-btn"
                   onClick={() => setIsHelpOpen((value) => !value)}
-                  aria-label={isHelpOpen ? "Sluit invoerhulp" : "Open invoerhulp"}
-                  title={isHelpOpen ? "Sluit invoerhulp" : "Open invoerhulp"}
+                  aria-label={isHelpOpen ? t("closeInputHelp") : t("openInputHelp")}
+                  title={isHelpOpen ? t("closeInputHelp") : t("openInputHelp")}
                 >
                   ?
                 </button>
@@ -747,8 +973,8 @@ export default function App() {
                   type="button"
                   className="collapse-btn"
                   onClick={() => setIsUploadCollapsed((value) => !value)}
-                  aria-label={isUploadCollapsed ? "Open invoerpaneel" : "Sluit invoerpaneel"}
-                  title={isUploadCollapsed ? "Open invoerpaneel" : "Sluit invoerpaneel"}
+                  aria-label={isUploadCollapsed ? t("openInputPanel") : t("closeInputPanel")}
+                  title={isUploadCollapsed ? t("openInputPanel") : t("closeInputPanel")}
                 >
                   {isUploadCollapsed ? "▾" : "▴"}
                 </button>
@@ -756,21 +982,21 @@ export default function App() {
             </div>
 
             {isHelpOpen ? (
-              <div className="input-help" role="note" aria-label="Invoerhulp">
-                <p className="help-title">Input bestand opties</p>
-                <p className="hint">Ondersteund: CSV, YAML (.yaml, .yml). Gebruik 1 record per regel/object.</p>
-                <p className="help-subtitle">Minimaal benodigd</p>
+              <div className="input-help" role="note" aria-label={t("inputHelpAria")}>
+                <p className="help-title">{t("inputFileOptions")}</p>
+                <p className="hint">{t("supportedFormats")}</p>
+                <p className="help-subtitle">{t("minimumRequired")}</p>
                 <ul>
-                  <li>Bronapplicatie (of Source, Source Application, From)</li>
-                  <li>Doelapplicatie (of Target, Target Application, To)</li>
+                  <li>{t("sourceApplicationField")}</li>
+                  <li>{t("targetApplicationField")}</li>
                 </ul>
-                <p className="help-subtitle">Optionele velden</p>
+                <p className="help-subtitle">{t("optionalFields")}</p>
                 <ul>
-                  <li>Bron type: Brontype, Bron type, Source hosting</li>
-                  <li>Doel type: Doeltype, Doel type, Target hosting</li>
-                  <li>Bron opmerking: Bronopmerking, Source comment, Source remark</li>
-                  <li>Doel opmerking: Doelopmerking, Target comment, Target remark</li>
-                  <li>Koppelingsoort: Koppelingsoort, Soort koppeling, Connection type, Integration type</li>
+                  <li>{t("sourceTypeField")}</li>
+                  <li>{t("targetTypeField")}</li>
+                  <li>{t("sourceRemarkField")}</li>
+                  <li>{t("targetRemarkField")}</li>
+                  <li>{t("connectionTypeField")}</li>
                 </ul>
               </div>
             ) : null}
@@ -779,7 +1005,7 @@ export default function App() {
               <>
                 <div className="format-row">
                   <label>
-                    Formaat
+                    {t("format")}
                     <select value={format} onChange={(e) => setFormat(e.target.value)}>
                       <option value="yaml">YAML</option>
                       <option value="csv">CSV</option>
@@ -789,12 +1015,12 @@ export default function App() {
 
                 <div className="saved-row">
                   <label>
-                    Opgeslagen bestanden
+                    {t("savedFiles")}
                     <select
                       value={activeSavedFileId}
                       onChange={(e) => loadSavedFile(e.target.value)}
                     >
-                      <option value="">Kies een opgeslagen bestand</option>
+                      <option value="">{t("chooseSavedFile")}</option>
                       {savedFiles.map((file) => (
                         <option key={file.id} value={file.id}>
                           {file.name} ({file.format.toUpperCase()})
@@ -802,14 +1028,14 @@ export default function App() {
                       ))}
                     </select>
                   </label>
-                  <div className="quick-switch-row" role="group" aria-label="Snel wisselen van datasets">
+                  <div className="quick-switch-row" role="group" aria-label={t("quickDatasetSwitch")}>
                     {quickSwitchFiles.map((file) => (
                       <button
                         key={file.id}
                         type="button"
                         className={`quick-file-btn ${activeSavedFileId === file.id ? "active" : ""}`}
                         onClick={() => loadSavedFile(file.id)}
-                        title={`Laad ${file.name}`}
+                        title={t("loadFileTitle", { name: file.name })}
                       >
                         {file.name}
                       </button>
@@ -820,7 +1046,7 @@ export default function App() {
                       type="text"
                       value={renameValue}
                       onChange={(e) => setRenameValue(e.target.value)}
-                      placeholder="Nieuwe naam voor selectie"
+                      placeholder={t("renamePlaceholder")}
                       disabled={!activeSavedFileId}
                     />
                     <button
@@ -828,17 +1054,17 @@ export default function App() {
                       onClick={renameActiveSavedFile}
                       disabled={!activeSavedFileId || !renameValue.trim()}
                     >
-                      Hernoem
+                      {t("rename")}
                     </button>
                   </div>
                   <div className="saved-actions">
-                    <button type="button" onClick={saveCurrentDataset}>Opslaan huidige</button>
+                    <button type="button" onClick={saveCurrentDataset}>{t("saveCurrent")}</button>
                     <button
                       type="button"
                       onClick={deleteActiveSavedFile}
                       disabled={!activeSavedFileId}
                     >
-                      Verwijder
+                      {t("delete")}
                     </button>
                   </div>
                   <div className="saved-actions">
@@ -847,13 +1073,13 @@ export default function App() {
                       onClick={exportSavedFiles}
                       disabled={!savedFiles.length}
                     >
-                      Exporteer
+                      {t("export")}
                     </button>
                     <button
                       type="button"
                       onClick={() => importInputRef.current?.click()}
                     >
-                      Importeer
+                      {t("import")}
                     </button>
                     <input
                       ref={importInputRef}
@@ -864,7 +1090,7 @@ export default function App() {
                     />
                   </div>
                 </div>
-                <span className="hint">Geuploade bestanden worden automatisch opgeslagen in je browser.</span>
+                <span className="hint">{t("browserSavedHint")}</span>
 
                 <div className="options-row">
                   <label className="toggle">
@@ -873,26 +1099,26 @@ export default function App() {
                       checked={dragEnabled}
                       onChange={(e) => setDragEnabled(e.target.checked)}
                     />
-                    Nodes verslepen
+                    {t("dragNodes")}
                   </label>
-                  <span className="hint">Klik op een node om verbonden onderdelen te focussen.</span>
+                  <span className="hint">{t("focusHint")}</span>
                 </div>
 
                 {error ? <p className="error">{error}</p> : null}
-                <p className="meta">Records: {editedRows.length}</p>
+                <p className="meta">{t("recordsCount", { count: editedRows.length })}</p>
               </>
             ) : (
               <>
-                <p className="meta">Paneel ingeklapt. Gebruik "Bestand kiezen" of klik hieronder om te wisselen.</p>
+                <p className="meta">{t("collapsedPanelHint")}</p>
                 {quickSwitchFiles.length ? (
-                  <div className="quick-switch-row" role="group" aria-label="Snel wisselen van datasets">
+                  <div className="quick-switch-row" role="group" aria-label={t("quickDatasetSwitch")}>
                     {quickSwitchFiles.map((file) => (
                       <button
                         key={file.id}
                         type="button"
                         className={`quick-file-btn ${activeSavedFileId === file.id ? "active" : ""}`}
                         onClick={() => loadSavedFile(file.id)}
-                        title={`Laad ${file.name}`}
+                        title={t("loadFileTitle", { name: file.name })}
                       >
                         {file.name}
                       </button>
@@ -905,12 +1131,12 @@ export default function App() {
 
           <section className="panel filter-panel">
             <div className="panel-header">
-              <h2>Filters</h2>
-              <button type="button" onClick={resetFilters}>Reset</button>
+              <h2>{t("filters")}</h2>
+              <button type="button" onClick={resetFilters}>{t("reset")}</button>
             </div>
 
             <div className="filter-group">
-              <p className="filter-title">Hosting</p>
+              <p className="filter-title">{t("hosting")}</p>
               <div className="filter-badges">
                 {hostingOptions.map((option) => {
                   const active = activeHostings.includes(option);
@@ -929,7 +1155,7 @@ export default function App() {
             </div>
 
             <div className="filter-group">
-              <p className="filter-title">Koppelingsoort</p>
+              <p className="filter-title">{t("connectionType")}</p>
               <div className="filter-badges">
                 {connectionTypeOptions.map((option) => {
                   const active = activeConnectionTypes.includes(option);
@@ -948,8 +1174,12 @@ export default function App() {
             </div>
 
             <p className="meta">
-              Zichtbaar: {filteredSets.visibleAppIds.size}/{nodes.filter((node) => node.type === "appNode").length} applicaties,
-              {" "}{filteredSets.visibleEdgeIds.size}/{edges.length} koppelingen
+              {t("visibleSummary", {
+                appsVisible: filteredSets.visibleAppIds.size,
+                appsTotal: nodes.filter((node) => node.type === "appNode").length,
+                edgesVisible: filteredSets.visibleEdgeIds.size,
+                edgesTotal: edges.length
+              })}
             </p>
           </section>
         </div>
@@ -974,7 +1204,7 @@ export default function App() {
               <Controls />
               <MiniMap pannable zoomable />
               <Panel position="top-right" className="legend">
-                <strong>Legend</strong>
+                <strong>{t("legend")}</strong>
                 <span>
                   <i className="dot saas" /> SaaS
                 </span>
@@ -982,28 +1212,28 @@ export default function App() {
                   <i className="dot onprem" /> On-premises
                 </span>
                 <span>
-                  <i className="dot unknown" /> Unknown
+                  <i className="dot unknown" /> {t("unknown")}
                 </span>
               </Panel>
             </ReactFlow>
           </section>
 
-          <section className="panel table-panel" aria-label="Tabelweergave van ingevoerde records">
+          <section className="panel table-panel" aria-label={t("tableAriaLabel")}>
             <div className="panel-header">
-              <h2>Table View</h2>
+              <h2>{t("tableView")}</h2>
               <div className="panel-header-actions">
-                <button type="button" onClick={addRow} title="Voeg een lege rij toe">
-                  + Rij
+                <button type="button" onClick={addRow} title={t("addRowTitle")}>
+                  {t("addRow")}
                 </button>
                 <button
                   type="button"
                   onClick={downloadEditedCSV}
                   disabled={!editedRows.length}
-                  title="Download als CSV"
+                  title={t("downloadCsvTitle")}
                 >
                   ↓ CSV
                 </button>
-                <p className="meta">Rijen: {editedRows.length}</p>
+                <p className="meta">{t("rowsCount", { count: editedRows.length })}</p>
               </div>
             </div>
 
@@ -1013,12 +1243,12 @@ export default function App() {
                   <thead>
                     <tr>
                       <th scope="col">#</th>
-                      {TABLE_COLUMNS.map((column) => (
+                      {tableColumns.map((column) => (
                         <th key={column.key} scope="col">
                           {column.label}
                         </th>
                       ))}
-                      <th scope="col" aria-label="Acties" />
+                      <th scope="col" aria-label={t("actions")} />
                     </tr>
                   </thead>
                   <tbody ref={tableBodyRef}>
@@ -1035,7 +1265,7 @@ export default function App() {
                           style={{ cursor: "pointer" }}
                         >
                           <td>{index + 1}</td>
-                          {TABLE_COLUMNS.map((column) => (
+                          {tableColumns.map((column) => (
                             <td key={column.key}>
                               <input
                                 className="table-cell-input"
@@ -1053,8 +1283,8 @@ export default function App() {
                                 e.stopPropagation();
                                 deleteRow(index);
                               }}
-                              aria-label="Verwijder rij"
-                              title="Verwijder rij"
+                              aria-label={t("deleteRow")}
+                              title={t("deleteRow")}
                             >
                               ×
                             </button>
@@ -1066,7 +1296,7 @@ export default function App() {
                 </table>
               </div>
             ) : (
-              <p className="meta">Geen records. Upload een bestand of voeg rijen toe.</p>
+              <p className="meta">{t("noRecords")}</p>
             )}
           </section>
         </div>
