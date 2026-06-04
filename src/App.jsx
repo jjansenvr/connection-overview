@@ -269,6 +269,10 @@ function RemarkEdge({
     targetY,
     targetPosition
   });
+  const edgeStroke = style?.stroke || "#334155";
+  const edgeStrokeWidth = Number(style?.strokeWidth ?? 1.6);
+  const edgeOpacity = typeof style?.opacity === "number" ? style.opacity : 1;
+  const glowOpacity = Math.max(0.08, Math.min(0.38, edgeOpacity * 0.32));
   const sourceLabel = data?.sourceLabel || "Source";
   const targetLabel = data?.targetLabel || "Target";
   const tooltipLines = [
@@ -282,6 +286,16 @@ function RemarkEdge({
 
   return (
     <>
+      <path
+        className="integration-edge-glow"
+        d={edgePath}
+        fill="none"
+        stroke={edgeStroke}
+        strokeWidth={edgeStrokeWidth + 8}
+        strokeOpacity={glowOpacity}
+        strokeLinecap="round"
+        pointerEvents="none"
+      />
       <BaseEdge
         id={id}
         path={edgePath}

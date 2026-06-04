@@ -548,6 +548,10 @@ input[type="text"]:focus {
   outline-offset: 2px;
 }
 
+.flow-panel .integration-edge-glow {
+  filter: blur(4px);
+}
+
 .table-panel {
   display: flex;
   flex-direction: column;
