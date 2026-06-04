@@ -272,6 +272,7 @@ function RemarkEdge({
   const edgeStroke = style?.stroke || "#334155";
   const edgeStrokeWidth = Number(style?.strokeWidth ?? 1.6);
   const edgeOpacity = typeof style?.opacity === "number" ? style.opacity : 1;
+  const hasIntegrationHighlight = Boolean(data?.hasIntegrationSolution);
   const glowOpacity = Math.max(0.08, Math.min(0.38, edgeOpacity * 0.32));
   const sourceLabel = data?.sourceLabel || "Source";
   const targetLabel = data?.targetLabel || "Target";
@@ -286,16 +287,18 @@ function RemarkEdge({
 
   return (
     <>
-      <path
-        className="integration-edge-glow"
-        d={edgePath}
-        fill="none"
-        stroke={edgeStroke}
-        strokeWidth={edgeStrokeWidth + 8}
-        strokeOpacity={glowOpacity}
-        strokeLinecap="round"
-        pointerEvents="none"
-      />
+      {hasIntegrationHighlight ? (
+        <path
+          className="integration-edge-glow"
+          d={edgePath}
+          fill="none"
+          stroke={edgeStroke}
+          strokeWidth={edgeStrokeWidth + 8}
+          strokeOpacity={glowOpacity}
+          strokeLinecap="round"
+          pointerEvents="none"
+        />
+      ) : null}
       <BaseEdge
         id={id}
         path={edgePath}
@@ -841,7 +844,7 @@ export default function App() {
           targetLabel: t("target")
         },
         hidden: !isVisible,
-        animated: isInFocus,
+        animated: isInFocus && Boolean(edge.data?.hasIntegrationSolution),
         style: {
           ...edge.style,
           opacity: isInFocus ? 1 : 0.12,
