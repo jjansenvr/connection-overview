@@ -181,6 +181,33 @@ body {
   min-height: 0;
 }
 
+.layout-fullscreen {
+  grid-template-columns: 1fr;
+  padding: 10px 18px 18px;
+}
+
+.layout-fullscreen .left-column {
+  display: none;
+}
+
+.layout-fullscreen .right-column {
+  height: calc(100vh - 110px);
+}
+
+.layout-fullscreen-graph .flow-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+.layout-fullscreen-table .table-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+.layout-fullscreen-table .table-wrap {
+  flex: 1;
+}
+
 .panel {
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -527,9 +554,89 @@ input[type="text"]:focus {
 }
 
 .flow-panel {
+  display: flex;
+  flex-direction: column;
   min-height: 600px;
   overflow: hidden;
   background: var(--flow-bg);
+}
+
+.flow-canvas {
+  flex: 1;
+  min-height: 0;
+}
+
+.pane-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--bg-secondary);
+}
+
+.pane-header-row h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.pane-fullscreen-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.pane-fullscreen {
+  flex: 1;
+}
+
+.compact-control-panel {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compact-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compact-upload-btn {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.compact-file-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.compact-filters-btn {
+  white-space: nowrap;
+}
+
+.compact-filters-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compact-filter-badges {
+  gap: 6px;
+}
+
+.compact-filter-badges .filter-badge {
+  padding: 4px 9px;
+  font-size: 0.75rem;
+}
+
+.compact-filters-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .flow-panel .react-flow__renderer,
@@ -758,6 +865,11 @@ input[type="text"]:focus {
     grid-template-rows: auto 1fr;
   }
 
+  .layout-fullscreen .right-column {
+    height: auto;
+    min-height: calc(100vh - 116px);
+  }
+
   .left-column {
     order: 0;
   }
@@ -782,5 +894,15 @@ input[type="text"]:focus {
   .saved-rename-row .saved-action-btn.compact {
     width: 100%;
     justify-content: center;
+  }
+
+  .compact-controls-row {
+    flex-wrap: wrap;
+  }
+
+  .compact-file-select {
+    width: 100%;
+    flex-basis: 100%;
+    order: 3;
   }
 }

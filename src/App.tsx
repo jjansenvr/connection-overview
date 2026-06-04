@@ -75,7 +75,14 @@ const TRANSLATIONS = {
     legend: "Legenda",
     unknown: "Onbekend",
     tableView: "Tabelweergave",
+    graphView: "Grafiek",
     tableAriaLabel: "Tabelweergave van ingevoerde records",
+    fullscreenGraph: "Grafiek op volledig scherm",
+    fullscreenTable: "Tabel op volledig scherm",
+    exitFullscreen: "Volledig scherm sluiten",
+    compactControls: "Compacte bediening",
+    showFilters: "Toon filters",
+    hideFilters: "Verberg filters",
     addRowTitle: "Voeg een lege rij toe",
     addRow: "+ Rij",
     downloadCsvTitle: "Download als CSV",
@@ -156,7 +163,14 @@ const TRANSLATIONS = {
     legend: "Legend",
     unknown: "Unknown",
     tableView: "Table View",
+    graphView: "Graph",
     tableAriaLabel: "Table view of imported records",
+    fullscreenGraph: "Fullscreen graph",
+    fullscreenTable: "Fullscreen table",
+    exitFullscreen: "Exit fullscreen",
+    compactControls: "Compact controls",
+    showFilters: "Show filters",
+    hideFilters: "Hide filters",
     addRowTitle: "Add an empty row",
     addRow: "+ Row",
     downloadCsvTitle: "Download as CSV",
@@ -401,6 +415,8 @@ export default function App() {
   const [selectedHostings, setSelectedHostings] = useState<string[] | null>(null);
   const [selectedConnectionTypes, setSelectedConnectionTypes] = useState<string[] | null>(null);
   const [selectedIntegrationSolutions, setSelectedIntegrationSolutions] = useState<string[] | null>(null);
+  const [fullscreenPane, setFullscreenPane] = useState<"none" | "graph" | "table">("none");
+  const [isCompactFiltersOpen, setIsCompactFiltersOpen] = useState(false);
   const importInputRef = useRef(null);
   const tableBodyRef = useRef(null);
   const [editedRows, setEditedRows] = useState<any[]>([]);
@@ -926,6 +942,11 @@ export default function App() {
     setSelectedIntegrationSolutions(null);
   }, []);
 
+  const toggleFullscreenPane = useCallback((pane: "graph" | "table") => {
+    setFullscreenPane((previous) => (previous === pane ? "none" : pane));
+    setIsCompactFiltersOpen(false);
+  }, []);
+
   const handleNodeClick = useCallback(
     (_, node) => {
       setSelectedNodeId(node.id);
@@ -1091,7 +1112,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="layout">
+      <main className={`layout ${fullscreenPane !== "none" ? `layout-fullscreen layout-fullscreen-${fullscreenPane}` : ""}`}>
         <div className="left-column">
           <section className={`panel left-panel ${isUploadCollapsed ? "collapsed" : ""}`}>
             <div className="panel-header">
@@ -1364,49 +1385,177 @@ export default function App() {
         </div>
 
         <div className="right-column">
-          <section className="panel flow-panel">
-            <ReactFlow
-              nodes={displayNodes}
-              edges={displayEdges}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
-              onInit={setReactFlowInstance}
-              onNodeClick={handleNodeClick}
-              onPaneClick={clearSelection}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              nodesDraggable={dragEnabled}
-              fitView
-              minZoom={0.2}
-              maxZoom={1.8}
-            >
-              <Background color="#cbd5e1" gap={18} />
-              <Controls />
-              <MiniMap pannable zoomable />
-              <Panel position="top-right" className="legend">
-                <strong>{t("legend")}</strong>
-                <span className="legend-subtitle">{t("integrationSolution")}</span>
-                {integrationLegendItems.length ? (
-                  integrationLegendItems.map((item) => (
-                    <span key={item.solution}>
-                      <i className="dot integration-dot" style={{ backgroundColor: item.color }} />
-                      {item.solution}
-                    </span>
-                  ))
-                ) : (
-                  <span>
-                    <i className="dot integration-dot" style={{ backgroundColor: "#334155" }} />
-                    {t("unknown")}
-                  </span>
-                )}
-              </Panel>
-            </ReactFlow>
-          </section>
+          {fullscreenPane !== "none" ? (
+            <section className="panel compact-control-panel" aria-label={t("compactControls")}>
+              <div className="compact-controls-row">
+                <label className="file-btn compact-upload-btn">
+                  {t("chooseFile")}
+                  <input
+                    type="file"
+                    accept=".csv,.yaml,.yml,text/csv"
+                    onClick={(e) => {
+                      e.currentTarget.value = "";
+                    }}
+                    onChange={onFileUpload}
+                  />
+                </label>
+                <select
+                  value={activeSavedFileId}
+                  onChange={(e) => loadSavedFile(e.target.value)}
+                  aria-label={t("chooseSavedFile")}
+                  className="compact-file-select"
+                >
+                  <option value="">{t("chooseSavedFile")}</option>
+                  {savedFiles.map((file) => (
+                    <option key={file.id} value={file.id}>
+                      {file.name} ({file.format.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="compact-filters-btn"
+                  onClick={() => setIsCompactFiltersOpen((value) => !value)}
+                >
+                  {isCompactFiltersOpen ? t("hideFilters") : t("showFilters")}
+                </button>
+              </div>
 
-          <section className="panel table-panel" aria-label={t("tableAriaLabel")}>
+              {isCompactFiltersOpen ? (
+                <div className="compact-filters-grid">
+                  <div className="filter-group">
+                    <p className="filter-title">{t("hosting")}</p>
+                    <div className="filter-badges compact-filter-badges">
+                      {hostingOptions.map((option) => {
+                        const active = activeHostings.includes(option);
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            className={`filter-badge ${active ? "active" : ""}`}
+                            onClick={() => toggleHostingFilter(option)}
+                          >
+                            {option}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="filter-group">
+                    <p className="filter-title">{t("connectionType")}</p>
+                    <div className="filter-badges compact-filter-badges">
+                      {connectionTypeOptions.map((option) => {
+                        const active = activeConnectionTypes.includes(option);
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            className={`filter-badge ${active ? "active" : ""}`}
+                            onClick={() => toggleConnectionTypeFilter(option)}
+                          >
+                            {option}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="filter-group">
+                    <p className="filter-title">{t("integrationSolution")}</p>
+                    <div className="filter-badges compact-filter-badges">
+                      {integrationSolutionOptions.map((option) => {
+                        const active = activeIntegrationSolutions.includes(option);
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            className={`filter-badge ${active ? "active" : ""}`}
+                            onClick={() => toggleIntegrationSolutionFilter(option)}
+                          >
+                            {option}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="compact-filters-footer">
+                    <button type="button" onClick={resetFilters}>{t("reset")}</button>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          {fullscreenPane !== "table" ? (
+            <section className={`panel flow-panel ${fullscreenPane === "graph" ? "pane-fullscreen" : ""}`}>
+              <div className="pane-header-row">
+                <h2>{t("graphView")}</h2>
+                <button
+                  type="button"
+                  className="pane-fullscreen-btn"
+                  onClick={() => toggleFullscreenPane("graph")}
+                  title={fullscreenPane === "graph" ? t("exitFullscreen") : t("fullscreenGraph")}
+                >
+                  {fullscreenPane === "graph" ? "⤡" : "⤢"}
+                </button>
+              </div>
+
+              <div className="flow-canvas">
+                <ReactFlow
+                  nodes={displayNodes}
+                  edges={displayEdges}
+                  nodeTypes={nodeTypes}
+                  edgeTypes={edgeTypes}
+                  onInit={setReactFlowInstance}
+                  onNodeClick={handleNodeClick}
+                  onPaneClick={clearSelection}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  nodesDraggable={dragEnabled}
+                  fitView
+                  minZoom={0.2}
+                  maxZoom={1.8}
+                >
+                  <Background color="#cbd5e1" gap={18} />
+                  <Controls />
+                  <MiniMap pannable zoomable />
+                  <Panel position="top-right" className="legend">
+                    <strong>{t("legend")}</strong>
+                    <span className="legend-subtitle">{t("integrationSolution")}</span>
+                    {integrationLegendItems.length ? (
+                      integrationLegendItems.map((item) => (
+                        <span key={item.solution}>
+                          <i className="dot integration-dot" style={{ backgroundColor: item.color }} />
+                          {item.solution}
+                        </span>
+                      ))
+                    ) : (
+                      <span>
+                        <i className="dot integration-dot" style={{ backgroundColor: "#334155" }} />
+                        {t("unknown")}
+                      </span>
+                    )}
+                  </Panel>
+                </ReactFlow>
+              </div>
+            </section>
+          ) : null}
+
+          {fullscreenPane !== "graph" ? (
+            <section className={`panel table-panel ${fullscreenPane === "table" ? "pane-fullscreen" : ""}`} aria-label={t("tableAriaLabel")}>
             <div className="panel-header">
               <h2>{t("tableView")}</h2>
               <div className="panel-header-actions">
+                <button
+                  type="button"
+                  className="pane-fullscreen-btn"
+                  onClick={() => toggleFullscreenPane("table")}
+                  title={fullscreenPane === "table" ? t("exitFullscreen") : t("fullscreenTable")}
+                >
+                  {fullscreenPane === "table" ? "⤡" : "⤢"}
+                </button>
                 <button type="button" onClick={addRow} title={t("addRowTitle")}>
                   {t("addRow")}
                 </button>
@@ -1483,7 +1632,8 @@ export default function App() {
             ) : (
               <p className="meta">{t("noRecords")}</p>
             )}
-          </section>
+            </section>
+          ) : null}
         </div>
       </main>
     </div>
