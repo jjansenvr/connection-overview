@@ -383,6 +383,7 @@ export default function App() {
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [selectedHostings, setSelectedHostings] = useState(null);
   const [selectedConnectionTypes, setSelectedConnectionTypes] = useState(null);
+  const [selectedIntegrationSolutions, setSelectedIntegrationSolutions] = useState(null);
   const importInputRef = useRef(null);
   const tableBodyRef = useRef(null);
   const [editedRows, setEditedRows] = useState([]);
@@ -665,6 +666,13 @@ export default function App() {
     return Array.from(options).sort((a, b) => a.localeCompare(b));
   }, [graph.edges]);
 
+  const integrationSolutionOptions = useMemo(() => {
+    const options = new Set(
+      graph.edges.map((edge) => String(edge.data?.integrationSolution || "").trim() || t("unknown"))
+    );
+    return Array.from(options).sort((a, b) => a.localeCompare(b, messages.locale));
+  }, [graph.edges, t, messages.locale]);
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -678,12 +686,18 @@ export default function App() {
 
   const activeHostings = selectedHostings ?? hostingOptions;
   const activeConnectionTypes = selectedConnectionTypes ?? connectionTypeOptions;
+  const activeIntegrationSolutions =
+    selectedIntegrationSolutions ?? integrationSolutionOptions;
 
   const filteredSets = useMemo(() => {
     const activeHostingsSet = new Set(activeHostings);
     const activeConnectionTypesSet = new Set(activeConnectionTypes);
+    const activeIntegrationSolutionsSet = new Set(activeIntegrationSolutions);
     const hostingMatchedAppIds = new Set();
-    const isAnyFilterActive = selectedHostings !== null || selectedConnectionTypes !== null;
+    const isAnyFilterActive =
+      selectedHostings !== null ||
+      selectedConnectionTypes !== null ||
+      selectedIntegrationSolutions !== null;
 
     nodes.forEach((node) => {
       if (node.type !== "appNode") {
@@ -700,10 +714,12 @@ export default function App() {
     const visibleEdgeIds = new Set();
     edges.forEach((edge) => {
       const matchesConnectionType = activeConnectionTypesSet.has(edge.label);
+      const solution = String(edge.data?.integrationSolution || "").trim() || t("unknown");
+      const matchesIntegrationSolution = activeIntegrationSolutionsSet.has(solution);
       const endpointsVisible =
         hostingMatchedAppIds.has(edge.source) && hostingMatchedAppIds.has(edge.target);
 
-      if (matchesConnectionType && endpointsVisible) {
+      if (matchesConnectionType && matchesIntegrationSolution && endpointsVisible) {
         visibleEdgeIds.add(edge.id);
       }
     });
@@ -738,7 +754,17 @@ export default function App() {
       visibleEdgeIds,
       visibleGroupIds
     };
-  }, [nodes, edges, activeHostings, activeConnectionTypes, selectedHostings, selectedConnectionTypes]);
+  }, [
+    nodes,
+    edges,
+    activeHostings,
+    activeConnectionTypes,
+    activeIntegrationSolutions,
+    selectedHostings,
+    selectedConnectionTypes,
+    selectedIntegrationSolutions,
+    t
+  ]);
 
   const visibleEdgeList = useMemo(
     () => edges.filter((edge) => filteredSets.visibleEdgeIds.has(edge.id)),
@@ -863,9 +889,24 @@ export default function App() {
     [connectionTypeOptions]
   );
 
+  const toggleIntegrationSolutionFilter = useCallback(
+    (value) => {
+      setSelectedIntegrationSolutions((previous) => {
+        const base = previous ?? integrationSolutionOptions;
+        const next = base.includes(value)
+          ? base.filter((item) => item !== value)
+          : [...base, value];
+
+        return next.length === integrationSolutionOptions.length ? null : next;
+      });
+    },
+    [integrationSolutionOptions]
+  );
+
   const resetFilters = useCallback(() => {
     setSelectedHostings(null);
     setSelectedConnectionTypes(null);
+    setSelectedIntegrationSolutions(null);
   }, []);
 
   const handleNodeClick = useCallback(
@@ -1267,6 +1308,25 @@ export default function App() {
                       type="button"
                       className={`filter-badge ${active ? "active" : ""}`}
                       onClick={() => toggleConnectionTypeFilter(option)}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <p className="filter-title">{t("integrationSolution")}</p>
+              <div className="filter-badges">
+                {integrationSolutionOptions.map((option) => {
+                  const active = activeIntegrationSolutions.includes(option);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`filter-badge ${active ? "active" : ""}`}
+                      onClick={() => toggleIntegrationSolutionFilter(option)}
                     >
                       {option}
                     </button>
