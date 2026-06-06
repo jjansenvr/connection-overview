@@ -450,6 +450,7 @@ export default function App() {
   const importInputRef = useRef(null);
   const tableBodyRef = useRef(null);
   const [editedRows, setEditedRows] = useState<any[]>([]);
+  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const { theme, toggle: toggleTheme } = useTheme();
   const messages = TRANSLATIONS[language] || TRANSLATIONS.en;
   const t = useCallback(
@@ -1009,6 +1010,12 @@ export default function App() {
   const handleNodeClick = useCallback(
     (_, node) => {
       setSelectedNodeId(node.id);
+      setSelectedRowIndex((previous) => {
+        const firstMatchIndex = editedRows.findIndex(
+          (row) => row.bronapplicatie === node.id || row.doelapplicatie === node.id
+        );
+        return firstMatchIndex === -1 ? previous : firstMatchIndex;
+      });
       const connected = getConnectedNodeIds(node.id, visibleEdgeList);
 
       if (reactFlowInstance && connected.size) {
@@ -1019,15 +1026,29 @@ export default function App() {
         });
       }
     },
-    [reactFlowInstance, visibleEdgeList]
+    [reactFlowInstance, visibleEdgeList, editedRows]
   );
 
   const clearSelection = useCallback(() => {
     setSelectedNodeId(null);
+    setSelectedRowIndex(null);
     if (reactFlowInstance) {
       reactFlowInstance.fitView({ padding: 0.2, duration: 250 });
     }
   }, [reactFlowInstance]);
+
+  const handleEdgeClick = useCallback((_, edge) => {
+    const nextIndex = Number(edge?.data?.recordIndex);
+    if (!Number.isNaN(nextIndex) && nextIndex >= 0) {
+      setSelectedRowIndex(nextIndex);
+    }
+
+    const sourceId = String(edge?.source || "");
+    const targetId = String(edge?.target || "");
+    if (sourceId || targetId) {
+      setSelectedNodeId(sourceId || targetId || null);
+    }
+  }, []);
 
   const updateCell = useCallback((rowIndex, key, value) => {
     setEditedRows((prev) => {
@@ -1094,21 +1115,28 @@ export default function App() {
   }, [tableColumns, editedRows, activeSavedFile, t]);
 
   const handleRowClick = useCallback(
-    (record) => {
-      const nodeId = record.bronapplicatie;
-      if (!nodeId) return;
-      setSelectedNodeId(nodeId);
-      if (!filteredSets.visibleAppIds.has(nodeId)) return;
-      const connected = getConnectedNodeIds(nodeId, visibleEdgeList);
-      if (reactFlowInstance && connected.size) {
+    (record, rowIndex) => {
+      const sourceId = String(record?.bronapplicatie || "").trim();
+      const targetId = String(record?.doelapplicatie || "").trim();
+      if (!sourceId && !targetId) return;
+
+      setSelectedRowIndex(rowIndex);
+
+      const visibleEndpoints = [sourceId, targetId].filter(
+        (id) => id && filteredSets.visibleAppIds.has(id)
+      );
+      const nodeId = visibleEndpoints[0] || sourceId || targetId;
+      setSelectedNodeId(nodeId || null);
+
+      if (reactFlowInstance && visibleEndpoints.length) {
         reactFlowInstance.fitView({
-          nodes: Array.from(connected).map((id) => ({ id })),
-          padding: 0.25,
+          nodes: visibleEndpoints.map((id) => ({ id })),
+          padding: 0.35,
           duration: 350
         });
       }
     },
-    [reactFlowInstance, visibleEdgeList, filteredSets]
+    [reactFlowInstance, filteredSets.visibleAppIds]
   );
 
   useEffect(() => {
@@ -1121,6 +1149,12 @@ export default function App() {
       rowElements[firstMatchIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }, [selectedNodeId, editedRows]);
+
+  useEffect(() => {
+    if (selectedRowIndex === null || !tableBodyRef.current) return;
+    const rowElements = tableBodyRef.current.querySelectorAll("tr");
+    rowElements[selectedRowIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [selectedRowIndex]);
 
   const onFileUpload = async (event) => {
     const file = event.target.files?.[0];
@@ -1578,6 +1612,7 @@ export default function App() {
                   edgeTypes={edgeTypes}
                   onInit={setReactFlowInstance}
                   onNodeClick={handleNodeClick}
+                  onEdgeClick={handleEdgeClick}
                   onPaneClick={clearSelection}
                   onNodesChange={onNodesChange}
                   onEdgesChange={onEdgesChange}
@@ -1656,14 +1691,15 @@ export default function App() {
                   <tbody ref={tableBodyRef}>
                     {editedRows.map((record, index) => {
                       const isHighlighted =
-                        selectedNodeId &&
-                        (record.bronapplicatie === selectedNodeId ||
-                          record.doelapplicatie === selectedNodeId);
+                        selectedRowIndex === index ||
+                        (selectedNodeId &&
+                          (record.bronapplicatie === selectedNodeId ||
+                            record.doelapplicatie === selectedNodeId));
                       return (
                         <tr
                           key={index}
                           className={isHighlighted ? "row-highlighted" : ""}
-                          onClick={() => handleRowClick(record)}
+                          onClick={() => handleRowClick(record, index)}
                           style={{ cursor: "pointer" }}
                         >
                           <td>{index + 1}</td>

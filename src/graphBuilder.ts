@@ -281,6 +281,7 @@ export function buildGraph(records, labels = DEFAULT_LABELS) {
       type: "remarkEdge",
       label: record.koppelingSoort || resolvedLabels.connectionFallback,
       data: {
+        recordIndex: index,
         sourceRemark: sourceOpmerking,
         targetRemark: targetOpmerking,
         integrationSolution,

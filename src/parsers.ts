@@ -44,10 +44,12 @@ export function mapRawRecord(rawRecord) {
       "To"
     ]),
     bronHosting: getValueByAliases(rawRecord, [
+      "bronHosting",
       "Brontype",
       "Bron type",
       "bronapplicatie Saas of on premises",
       "Bronapplicatie Saas/on premises",
+      "Source type",
       "Source SaaS/On premises",
       "Source hosting"
     ]),
@@ -59,10 +61,12 @@ export function mapRawRecord(rawRecord) {
       "Source notes"
     ]),
     doelHosting: getValueByAliases(rawRecord, [
+      "doelHosting",
       "Doeltype",
       "Doel type",
       "Doelapplicatie Saas/on premises",
       "doelapplicatie Saas of on premises",
+      "Target type",
       "Target SaaS/On premises",
       "Target hosting"
     ]),
