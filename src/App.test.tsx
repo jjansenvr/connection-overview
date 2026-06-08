@@ -5,8 +5,8 @@ import App from "./App";
 
 const fitViewMock = vi.fn();
 
-vi.mock("./graphBuilder", async () => {
-  const actual = await vi.importActual<typeof import("./graphBuilder")>("./graphBuilder");
+vi.mock("./features/graph/graphBuilder", async () => {
+  const actual = await vi.importActual<typeof import("./features/graph/graphBuilder")>("./features/graph/graphBuilder");
 
   return {
     ...actual,
