@@ -28,6 +28,8 @@ import {
   interpolate,
   serializeRowsByFormat
 } from "./utils/appHelpers";
+import logoDarkMode from "./assets/Logo_FRANK_darkmode.png";
+import logoLightMode from "./assets/Logo_FRANK_lightmode.jpg";
 
 const TRANSLATIONS = {
   nl: {
@@ -1127,7 +1129,7 @@ export default function App() {
             <h1><span className="brand-accent">Connection</span>Overview</h1>
             <img
               className="wearfrank-logo"
-              src="https://wearefrank.org/assets/images/logo-wearefrank.svg"
+              src={theme === "dark" ? logoDarkMode : logoLightMode}
               alt="WE ARE FRANK"
             />
           </div>
