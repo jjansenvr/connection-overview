@@ -1127,11 +1127,6 @@ export default function App() {
         <div className="topbar-brand">
           <div className="topbar-brand-row">
             <h1><span className="brand-accent">Connection</span>Overview</h1>
-            <img
-              className="wearfrank-logo"
-              src={theme === "dark" ? logoDarkMode : logoLightMode}
-              alt="WE ARE FRANK"
-            />
           </div>
           <p>{t("titleTagline")}</p>
         </div>
@@ -1159,6 +1154,11 @@ export default function App() {
           >
             {theme === "dark" ? "☀︎" : "☾"}
           </button>
+          <img
+            className="wearfrank-logo"
+            src={theme === "dark" ? logoDarkMode : logoLightMode}
+            alt="WE ARE FRANK"
+          />
         </div>
       </header>
 
