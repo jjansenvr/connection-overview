@@ -1207,10 +1207,11 @@ export default function App() {
         <div className="topbar-brand">
           <div className="topbar-brand-row">
             <h1><span className="brand-accent">Connection</span>Overview</h1>
-            <div className="wearfrank-logo" aria-label="Wearfrank logo" title="Wearfrank">
-              <span className="wearfrank-mark" aria-hidden="true">WF</span>
-              <span className="wearfrank-wordmark">wearfrank</span>
-            </div>
+            <img
+              className="wearfrank-logo"
+              src="https://wearefrank.org/assets/images/logo-wearefrank.svg"
+              alt="WE ARE FRANK"
+            />
           </div>
           <p>{t("titleTagline")}</p>
         </div>
