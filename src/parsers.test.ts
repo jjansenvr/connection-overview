@@ -31,4 +31,39 @@ describe("parseByFormat hosting aliases", () => {
     expect(rows[0].bronHosting).toBe("SaaS");
     expect(rows[0].doelHosting).toBe("On premises");
   });
+
+  it("maps english aliases and remarks", () => {
+    const csvText = [
+      "Source,Target,Connection type,Integration solution,Source remark,Target remark",
+      "ERP,CRM,API,Mule,Source note,Target note"
+    ].join("\n");
+
+    const rows = parseByFormat(csvText, "csv");
+
+    expect(rows[0]).toMatchObject({
+      bronapplicatie: "ERP",
+      doelapplicatie: "CRM",
+      koppelingSoort: "API",
+      integratieOplossing: "Mule",
+      bronOpmerking: "Source note",
+      doelOpmerking: "Target note"
+    });
+  });
+
+  it("throws a clear error when yaml is not a list", () => {
+    expect(() => parseByFormat("key: value", "yaml")).toThrow("YAML should contain a list of records.");
+  });
+
+  it("throws for unsupported format", () => {
+    expect(() => parseByFormat("{}", "json")).toThrow("Unsupported format: json");
+  });
+
+  it("throws CSV parse error for malformed quoted fields", () => {
+    const malformedCsv = [
+      "Source,Target",
+      '"ERP,CRM'
+    ].join("\n");
+
+    expect(() => parseByFormat(malformedCsv, "csv")).toThrow(/CSV parse error on row/);
+  });
 });

@@ -14,22 +14,20 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 
-import { applyElkLayout, buildGraph } from "./graphBuilder";
-import { parseByFormat } from "./parsers";
-
-const SAVED_FILES_STORAGE_KEY = "connection-overview.saved-files.v1";
-const ACTIVE_SAVED_FILE_STORAGE_KEY = "connection-overview.active-file-id.v1";
-const LANGUAGE_STORAGE_KEY = "connection-overview.language.v1";
-const TABLE_ROW_KEYS = [
-  "bronapplicatie",
-  "doelapplicatie",
-  "bronHosting",
-  "doelHosting",
-  "koppelingSoort",
-  "integratieOplossing",
-  "bronOpmerking",
-  "doelOpmerking"
-];
+import {
+  ACTIVE_SAVED_FILE_STORAGE_KEY,
+  LANGUAGE_STORAGE_KEY,
+  SAVED_FILES_STORAGE_KEY
+} from "./config/appConfig";
+import { applyElkLayout, buildGraph } from "./features/graph/graphBuilder";
+import { parseByFormat } from "./features/parsing/parsers";
+import {
+  formatFromFileName,
+  getConnectedNodeIds,
+  getTableColumns,
+  interpolate,
+  serializeRowsByFormat
+} from "./utils/appHelpers";
 
 const TRANSLATIONS = {
   nl: {
@@ -225,53 +223,6 @@ function getInitialLanguage() {
   return navigator.language?.toLowerCase().startsWith("nl") ? "nl" : "en";
 }
 
-function interpolate(template, values = {}) {
-  return String(template).replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
-}
-
-function getTableColumns(t) {
-  return [
-    { key: "bronapplicatie", label: t("sourceApplication") },
-    { key: "doelapplicatie", label: t("targetApplication") },
-    { key: "bronHosting", label: t("sourceType") },
-    { key: "doelHosting", label: t("targetType") },
-    { key: "koppelingSoort", label: t("connectionType") },
-    { key: "integratieOplossing", label: t("integrationSolution") },
-    { key: "bronOpmerking", label: t("sourceRemark") },
-    { key: "doelOpmerking", label: t("targetRemark") }
-  ];
-}
-
-function formatFromFileName(fileName, fallbackFormat = "yaml") {
-  const lower = String(fileName || "").toLowerCase();
-  if (lower.endsWith(".csv")) {
-    return "csv";
-  }
-  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) {
-    return "yaml";
-  }
-  return fallbackFormat;
-}
-
-function serializeRowsByFormat(rows, format) {
-  const normalizedRows = (rows || []).map((row) => {
-    const normalized = {};
-    TABLE_ROW_KEYS.forEach((key) => {
-      normalized[key] = String(row?.[key] ?? "");
-    });
-    return normalized;
-  });
-
-  if (format === "csv") {
-    return Papa.unparse(normalizedRows, {
-      header: true,
-      columns: TABLE_ROW_KEYS,
-      skipEmptyLines: false
-    });
-  }
-
-  return JSON.stringify(normalizedRows, null, 2);
-}
 
 function NodeLabel({ data }) {
   return (
@@ -389,39 +340,6 @@ function useTheme() {
 
   const toggle = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), []);
   return { theme, toggle };
-}
-
-function getConnectedNodeIds(startId, edges) {
-  const adjacency = new Map();
-
-  edges.forEach((edge) => {
-    if (!adjacency.has(edge.source)) {
-      adjacency.set(edge.source, new Set());
-    }
-    if (!adjacency.has(edge.target)) {
-      adjacency.set(edge.target, new Set());
-    }
-
-    adjacency.get(edge.source).add(edge.target);
-    adjacency.get(edge.target).add(edge.source);
-  });
-
-  const visited = new Set([startId]);
-  const queue = [startId];
-
-  while (queue.length) {
-    const current = queue.shift();
-    const neighbors = adjacency.get(current) || new Set();
-
-    neighbors.forEach((neighbor) => {
-      if (!visited.has(neighbor)) {
-        visited.add(neighbor);
-        queue.push(neighbor);
-      }
-    });
-  }
-
-  return visited;
 }
 
 export default function App() {
