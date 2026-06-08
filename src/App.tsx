@@ -86,6 +86,7 @@ const TRANSLATIONS = {
     unknown: "Onbekend",
     tableView: "Tabelweergave",
     graphView: "Grafiek",
+    openFileLabel: "Open bestand",
     tableAriaLabel: "Tabelweergave van ingevoerde records",
     fullscreenGraph: "Grafiek op volledig scherm",
     fullscreenTable: "Tabel op volledig scherm",
@@ -174,6 +175,7 @@ const TRANSLATIONS = {
     unknown: "Unknown",
     tableView: "Table View",
     graphView: "Graph",
+    openFileLabel: "Open file",
     tableAriaLabel: "Table view of imported records",
     fullscreenGraph: "Fullscreen graph",
     fullscreenTable: "Fullscreen table",
@@ -537,7 +539,23 @@ export default function App() {
     [savedFiles, activeSavedFileId]
   );
 
-  const quickSwitchFiles = useMemo(() => savedFiles.slice(0, 10), [savedFiles]);
+  const quickSwitchFiles = useMemo(() => {
+    if (!savedFiles.length) {
+      return [];
+    }
+
+    const topFiles = savedFiles.slice(0, 10);
+    if (!activeSavedFileId || topFiles.some((file) => file.id === activeSavedFileId)) {
+      return topFiles;
+    }
+
+    const activeFile = savedFiles.find((file) => file.id === activeSavedFileId);
+    if (!activeFile) {
+      return topFiles;
+    }
+
+    return [activeFile, ...topFiles].slice(0, 10);
+  }, [savedFiles, activeSavedFileId]);
 
   useEffect(() => {
     setRenameValue(activeSavedFile?.name || "");
@@ -1187,7 +1205,13 @@ export default function App() {
     <div className="page">
       <header className="topbar">
         <div className="topbar-brand">
-          <h1><span className="brand-accent">Connection</span>Overview</h1>
+          <div className="topbar-brand-row">
+            <h1><span className="brand-accent">Connection</span>Overview</h1>
+            <div className="wearfrank-logo" aria-label="Wearfrank logo" title="Wearfrank">
+              <span className="wearfrank-mark" aria-hidden="true">WF</span>
+              <span className="wearfrank-wordmark">wearfrank</span>
+            </div>
+          </div>
           <p>{t("titleTagline")}</p>
         </div>
         <div className="topbar-actions">
@@ -1596,7 +1620,12 @@ export default function App() {
           {fullscreenPane !== "table" ? (
             <section className={`panel flow-panel ${fullscreenPane === "graph" ? "pane-fullscreen" : ""}`}>
               <div className="pane-header-row">
-                <h2>{t("graphView")}</h2>
+                <div className="pane-header-title-wrap">
+                  <h2>{t("graphView")}</h2>
+                  <span className={`active-file-pill ${activeSavedFile ? "active" : ""}`}>
+                    {t("openFileLabel")}: {activeSavedFile?.name || t("chooseSavedFile")}
+                  </span>
+                </div>
                 <button
                   type="button"
                   className="pane-fullscreen-btn"
