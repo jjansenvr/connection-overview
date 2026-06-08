@@ -1141,6 +1141,11 @@ export default function App() {
               ))}
             </select>
           </label>
+          <img
+            className="wearfrank-logo"
+            src={theme === "dark" ? logoDarkMode : logoLightMode}
+            alt="WE ARE FRANK"
+          />
           <button
             type="button"
             className="icon-btn"
@@ -1154,11 +1159,6 @@ export default function App() {
           >
             {theme === "dark" ? "☀︎" : "☾"}
           </button>
-          <img
-            className="wearfrank-logo"
-            src={theme === "dark" ? logoDarkMode : logoLightMode}
-            alt="WE ARE FRANK"
-          />
         </div>
       </header>
 
