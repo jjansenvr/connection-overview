@@ -124,6 +124,33 @@ describe("App interaction and persistence", () => {
     expect(screen.getByDisplayValue("On premises")).toBeInTheDocument();
   });
 
+  it("keeps edited table fields after language switch reparses input", async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Source note")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByDisplayValue("Source note"), {
+      target: { value: "Updated source note" }
+    });
+    fireEvent.change(screen.getByDisplayValue("Target note"), {
+      target: { value: "Updated target note" }
+    });
+    fireEvent.change(screen.getByDisplayValue("Mule"), {
+      target: { value: "Boomi" }
+    });
+
+    fireEvent.change(screen.getByLabelText("Language"), { target: { value: "nl" } });
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Updated source note")).toBeInTheDocument();
+    });
+
+    expect(screen.getByDisplayValue("Updated target note")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Boomi")).toBeInTheDocument();
+  });
+
   it("supports graph and table highlight both ways", async () => {
     const { container } = render(<App />);
 

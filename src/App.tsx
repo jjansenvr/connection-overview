@@ -1054,6 +1054,7 @@ export default function App() {
     setEditedRows((prev) => {
       const next = [...prev];
       next[rowIndex] = { ...next[rowIndex], [key]: value };
+      setInput(serializeRowsByFormat(next, format));
       persistEditedRowsForFile(activeSavedFileId, next, format);
       return next;
     });
@@ -1062,6 +1063,7 @@ export default function App() {
   const deleteRow = useCallback((rowIndex) => {
     setEditedRows((prev) => {
       const next = prev.filter((_, i) => i !== rowIndex);
+      setInput(serializeRowsByFormat(next, format));
       persistEditedRowsForFile(activeSavedFileId, next, format);
       return next;
     });
@@ -1082,6 +1084,7 @@ export default function App() {
           doelOpmerking: ""
         }
       ];
+      setInput(serializeRowsByFormat(next, format));
       persistEditedRowsForFile(activeSavedFileId, next, format);
       return next;
     });
